@@ -577,14 +577,14 @@ function viewHome(){
     </div>
 
     <div class="card" style="margin-top:12px">
-      ${next ? `<div style="margin-bottom:10px">Next stop: <b>${next.icon} ${next.en}</b> — <span class="muted">${next.at-comb} stars to go</span>${sv(next.sv+" — "+(next.at-comb)+" stjärnor kvar")}</div>`
+      ${next ? `<div style="margin-bottom:10px">Next stop: <b>${next.en}</b> — <span class="muted">${next.at-comb} stars to go</span>${sv(next.sv+" — "+(next.at-comb)+" stjärnor kvar")}</div>`
         : `<div style="margin-bottom:10px"><b>You finished the whole journey together!</b>${sv("Ni klarade hela resan tillsammans!")}</div>`}
       <div class="journey">
         ${JOURNEY.map((s,i)=>{
           const done=comb>=s.at, cur=(i===jIdx);
           return `<div class="stop ${done?'done':''} ${cur?'current':''}">
              <div class="dot">${done?s.icon:'🔒'}</div>
-             <div class="t">${s.icon} ${s.en}</div>
+             <div class="t">${s.en}</div>
              <div class="s">${s.sv}</div>
              ${!done?`<div class="need">${s.at} stars</div>`:''}
            </div>`;

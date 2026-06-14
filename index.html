@@ -6,6 +6,10 @@
 <meta name="theme-color" content="#f3f6fc" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<!-- No service worker / offline cache, so the app always loads the latest
+     version from the network (even after "Add to Home Screen"). These hints
+     discourage stale caching of the page itself. -->
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
 <title>Road to London 🇬🇧 — Summer Challenge</title>
 <style>
   :root{
@@ -130,6 +134,7 @@
   .stop .s{font-size:12px;color:#9a6b12}
   .stop .need{font-size:11px;color:var(--muted)}
   .stop:not(.done) .t{color:var(--muted)}
+  .readmore{display:inline-block;margin-top:5px;font-size:12px;font-weight:700;color:var(--blue);text-decoration:none}
 
   /* chips */
   .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
@@ -218,14 +223,10 @@
    ========================================================================= */
 
 const STORE_KEY = "roadToLondon_v2";
+const APP_VERSION = "2026.06.14";   // bumped on each release; shown in Parents' Zone
 const DEFAULT_PASSWORD = "london2026";
 const TRIP_START = "2026-10-25";   // London trip
 const TRIP_END   = "2026-10-28";
-
-const IDENTITIES = {
-  august: { name:"August" },
-  lykke:  { name:"Lykke" }
-};
 
 const AVATARS = ["🦁","🦊","🐯","🐲","🦄","🐼","🐸","🐵","🦖","🐱","🐶","🦉","🐧","🦅","🦈","🐙","🚀","⚡","🔥","🌟","🦸","🥷","🧙","👑"];
 
@@ -255,6 +256,7 @@ const CHALLENGES = [
   {id:"a5", cat:"active", type:"daily",  stars:10, icon:"⚽", en:"Play a sport or ball game", sv:"Spela en sport eller ett bollspel."},
   {id:"a6", cat:"active", type:"daily",  stars:15, icon:"🛹", en:"Practise a skill: skateboard, jump rope, football tricks", sv:"Träna en färdighet: skateboard, hopprep eller fotbollstrick."},
   {id:"a7", cat:"active", type:"weekly", stars:30, icon:"🧗", en:"Go to a playground or outdoor gym", sv:"Gå till en lekplats eller ett utegym."},
+  {id:"a8", cat:"active", type:"weekly", stars:35, icon:"🫐", en:"Pick blueberries or other berries in the forest", sv:"Plocka blåbär eller andra bär i skogen."},
 
   /* ELTON THE DOG 🐶 */
   {id:"d1", cat:"dog", type:"daily",  stars:15, icon:"🦮", en:"Take Elton for a walk", sv:"Gå ut med Elton på en promenad."},
@@ -268,12 +270,13 @@ const CHALLENGES = [
   /* COOKING & BAKING 🍳 (stove/oven quests need a parent) */
   {id:"b1", cat:"kitchen", type:"daily",  stars:15, icon:"🥪", en:"Make your own breakfast or a healthy snack", sv:"Gör din egen frukost eller ett nyttigt mellanmål."},
   {id:"b2", cat:"kitchen", type:"daily",  stars:15, icon:"🥗", en:"Make a fruit salad or a smoothie", sv:"Gör en fruktsallad eller en smoothie."},
-  {id:"b3", cat:"kitchen", type:"weekly", stars:45, icon:"🧁", needsParent:true, en:"Bake buns or cookies with a parent", sv:"Baka bullar eller kakor tillsammans med en förälder."},
-  {id:"b4", cat:"kitchen", type:"weekly", stars:50, icon:"🍝", needsParent:true, en:"Help cook a dinner on the stove (with a parent)", sv:"Hjälp till att laga en middag på spisen (med en förälder)."},
-  {id:"b5", cat:"kitchen", type:"weekly", stars:45, icon:"🥐", needsParent:true, en:"Bake Swedish 'kanelbullar' (cinnamon buns) with a parent", sv:"Baka kanelbullar tillsammans med en förälder."},
+  {id:"b3", cat:"kitchen", type:"weekly", stars:45, icon:"🧁", en:"Bake buns or cookies", sv:"Baka bullar eller kakor."},
+  {id:"b4", cat:"kitchen", type:"weekly", stars:50, icon:"🍝", en:"Help cook a dinner", sv:"Hjälp till att laga en middag."},
+  {id:"b5", cat:"kitchen", type:"weekly", stars:45, icon:"🥐", en:"Bake Swedish 'kanelbullar' (cinnamon buns)", sv:"Baka kanelbullar."},
   {id:"b6", cat:"kitchen", type:"weekly", stars:30, icon:"🍽️", en:"Plan a family meal menu and set a nice table", sv:"Planera en meny för en familjemiddag och duka fint."},
   {id:"b7", cat:"kitchen", type:"daily",  stars:10, icon:"🧽", en:"Help wash up or load the dishwasher", sv:"Hjälp till att diska eller fylla diskmaskinen."},
-  {id:"b8", cat:"kitchen", type:"weekly", stars:40, icon:"🇬🇧", needsParent:true, en:"Bake or cook something British (scones, pancakes…) with a parent", sv:"Baka eller laga något brittiskt (scones, pannkakor…) med en förälder."},
+  {id:"b8", cat:"kitchen", type:"weekly", stars:40, icon:"🇬🇧", en:"Bake or cook something British (scones, pancakes…)", sv:"Baka eller laga något brittiskt (scones, pannkakor…)."},
+  {id:"b9", cat:"kitchen", type:"weekly", stars:30, icon:"🫐", en:"Make jam, a smoothie or a pie with berries you picked", sv:"Gör sylt, smoothie eller paj av bär du plockat."},
 
   /* GOTHENBURG 🚋 (paid attractions and boat trips need a parent) */
   {id:"g1", cat:"local", type:"weekly", stars:40, icon:"🐧", en:"Explore Slottsskogen and spot the penguins or moose", sv:"Utforska Slottsskogen och spana in pingvinerna eller älgarna."},
@@ -324,15 +327,15 @@ const JOURNEY = [
   {at:900,  icon:"🛫", en:"Take off!",                 sv:"Lyft!"},
   {at:1300, icon:"☁️", en:"Flying over the sea",       sv:"Flyger över havet"},
   {at:1750, icon:"🛬", en:"Landing in London",         sv:"Landar i London"},
-  {at:2250, icon:"🕰️", en:"Big Ben",                   sv:"Big Ben — det berömda klocktornet"},
-  {at:2800, icon:"🎡", en:"The London Eye",            sv:"London Eye — det stora pariserhjulet"},
-  {at:3400, icon:"🌉", en:"Tower Bridge",              sv:"Tower Bridge — den berömda bron"},
-  {at:4100, icon:"🏰", en:"Buckingham Palace",         sv:"Buckingham Palace — kungens slott"},
-  {at:4900, icon:"🦕", en:"Natural History Museum",    sv:"Naturhistoriska museet — dinosaurier!"},
-  {at:5800, icon:"🚇", en:"Ride the Tube",             sv:"Åk tunnelbana — 'the Tube'"},
-  {at:6800, icon:"🌳", en:"Picnic in Hyde Park",       sv:"Picknick i Hyde Park"},
-  {at:7900, icon:"🧙", en:"Harry Potter Studios",      sv:"Harry Potter-studiorna"},
-  {at:9000, icon:"👑", en:"London Legends!",           sv:"London-legender! Ni klarade hela resan!"}
+  {at:2250, icon:"🕰️", en:"Big Ben",                   sv:"Big Ben — det berömda klocktornet", link:"https://sv.wikipedia.org/wiki/Big_Ben"},
+  {at:2800, icon:"🎡", en:"The London Eye",            sv:"London Eye — det stora pariserhjulet", link:"https://sv.wikipedia.org/wiki/London_Eye"},
+  {at:3400, icon:"🌉", en:"Tower Bridge",              sv:"Tower Bridge — den berömda bron", link:"https://sv.wikipedia.org/wiki/Tower_Bridge"},
+  {at:4100, icon:"🏰", en:"Buckingham Palace",         sv:"Buckingham Palace — kungens slott", link:"https://sv.wikipedia.org/wiki/Buckingham_Palace"},
+  {at:4900, icon:"🦕", en:"Natural History Museum",    sv:"Naturhistoriska museet — dinosaurier!", link:"https://sv.wikipedia.org/wiki/Natural_History_Museum"},
+  {at:5800, icon:"🚇", en:"Ride the Tube",             sv:"Åk tunnelbana — 'the Tube'", link:"https://sv.wikipedia.org/wiki/Londons_tunnelbana"},
+  {at:6800, icon:"🌳", en:"Picnic in Hyde Park",       sv:"Picknick i Hyde Park", link:"https://sv.wikipedia.org/wiki/Hyde_Park"},
+  {at:7900, icon:"🧙", en:"Harry Potter Studios",      sv:"Harry Potter-studiorna", link:"https://sv.wikipedia.org/wiki/Harry_Potter"},
+  {at:9000, icon:"👑", en:"London Legends!",           sv:"London-legender! Ni klarade hela resan!", link:"https://sv.wikipedia.org/wiki/London"}
 ];
 
 const RANKS = ["Rookie Traveller","Junior Explorer","City Scout","Map Master","Globe Trotter","London Pro","Royal Adventurer","London Legend"];
@@ -373,8 +376,9 @@ const FACTS = [
 function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function weekStr(){ const d=new Date(); const j=new Date(d.getFullYear(),0,1); const w=Math.ceil((((d-j)/86400000)+j.getDay()+1)/7); return d.getFullYear()+"-W"+w; }
 
-function freshMe(id, avatar){
-  return { id, name:IDENTITIES[id].name, avatar,
+function newId(){ return "u_"+Math.random().toString(36).slice(2,10); }
+function freshMe(name, avatar, id){
+  return { id: id||newId(), name, avatar,
     stars:0, totalDone:0, catCount:{}, done:{},
     streak:0, bestStreak:0, lastActive:null, badges:[], evidence:[] };
 }
@@ -387,18 +391,38 @@ function defaultState(){
 let state = load();
 let activeTab = "home";
 let activeCat = "all";
-let setupId = null, setupAvatar = null;
+let setupAvatar = null;
 
+/* ---------------------------------------------------------------------------
+   CONTENT vs PROGRESS
+   All game CONTENT (categories, challenges, journey/levels, badges, facts) lives
+   in the consts above and is re-read from the latest code on every page load —
+   so it updates after a new release, even once the app is added to the home
+   screen (there is no service worker caching an old copy).
+
+   The player's PROGRESS lives in localStorage (state.me) and persists across
+   those content updates. What is permanent and never recomputed:
+     • state.me.stars      → total points (running total)
+     • state.me.done       → completed challenges (keyed by stable challenge id)
+     • state.me.evidence   → proof photos for completed challenges
+   Multi-completion progress is derived from state.me.done by counting a
+   challenge's id, so adding/editing challenges keeps the right counts as long
+   as challenge ids are STABLE (never reuse an id for a different challenge).
+   load() merges saved progress onto fresh defaults so new fields added in a
+   future release don't wipe existing players.
+--------------------------------------------------------------------------- */
 function load(){
   try{
     const raw=localStorage.getItem(STORE_KEY);
     if(!raw) return defaultState();
-    const s=JSON.parse(raw);
-    if(!s.tripStart) s.tripStart=TRIP_START;
-    if(!s.tripEnd) s.tripEnd=TRIP_END;
-    if(s.soundOn===undefined) s.soundOn=true;
-    if(!("partner" in s)) s.partner=null;
-    if(s.me && !s.me.evidence) s.me.evidence=[];
+    const saved=JSON.parse(raw);
+    const s=Object.assign(defaultState(), saved);   // new fields fall back to defaults
+    if(s.me){
+      // ensure every expected field exists without touching real progress
+      const shape={ stars:0, totalDone:0, catCount:{}, done:{}, streak:0, bestStreak:0, lastActive:null, badges:[], evidence:[] };
+      s.me=Object.assign(shape, s.me);
+      if(!s.me.id) s.me.id=newId();
+    }
     return s;
   }catch(e){ return defaultState(); }
 }
@@ -464,46 +488,32 @@ function renderSetup(){
       <div class="muted">Summer Challenge · Sommarutmaning</div>
       <div class="stripe"></div>
     </div>
-    <div class="card center">
-      <b>Who are you?</b>
-      <div class="muted" style="font-size:13px;margin-top:4px">Pick yourself. Your sibling uses their own phone.</div>
-      ${sv("Välj dig själv. Ditt syskon använder sin egen telefon.")}
-    </div>
-    <div class="pickgrid" id="idPick">
-      ${Object.entries(IDENTITIES).map(([id,m])=>`
-        <div class="card pickcard" data-id="${id}">
-          <div class="av">🙂</div><div class="nm">${m.name}</div>
-        </div>`).join("")}
-    </div>
-   </div>`;
-  app.querySelectorAll("[data-id]").forEach(c=>c.onclick=()=>{ setupId=c.dataset.id; renderAvatarPick(); });
-}
-
-function renderAvatarPick(){
-  const app=document.getElementById("app");
-  app.innerHTML=`
-   <div class="screen">
-    <div class="brand" style="padding-top:24px">
-      <span class="plane">✈️</span>
-      <h1>Hi, ${esc(IDENTITIES[setupId].name)}!</h1>
-      <div class="stripe"></div>
-    </div>
-    <div class="card center">
-      <b>Pick your character</b>
-      ${sv("Välj din figur.")}
+    <div class="card">
+      <label style="margin-top:0">Your name</label>
+      <input id="nameInput" placeholder="Type your name" autocomplete="off" maxlength="20">
+      ${sv("Skriv ditt namn. Ditt syskon spelar på sin egen telefon.")}
+      <div style="font-weight:700;margin-top:16px">Pick your character</div>
       <div class="avatars" id="avPick">
         ${AVATARS.map(a=>`<div class="avo ${setupAvatar===a?'sel':''}" data-av="${a}">${a}</div>`).join("")}
       </div>
     </div>
-    <div class="row" style="margin-top:16px;gap:10px">
-      <button class="btn ghost" id="backId" style="flex:1">Back</button>
-      <button class="btn" id="startBtn" style="flex:2" ${setupAvatar?'':'disabled'}>Let's go! 🚀</button>
-    </div>
+    <button class="btn" id="startBtn" style="margin-top:16px" disabled>Let's go!</button>
    </div>`;
-  app.querySelectorAll("[data-av]").forEach(a=>a.onclick=()=>{ setupAvatar=a.dataset.av; renderAvatarPick(); });
-  document.getElementById("backId").onclick=()=>{ setupAvatar=null; renderSetup(); };
-  const sb=document.getElementById("startBtn");
-  sb.onclick=()=>{ if(!setupAvatar) return; state.me=freshMe(setupId,setupAvatar); save(); activeTab="home"; render(); };
+  const nameInput=document.getElementById("nameInput");
+  const startBtn=document.getElementById("startBtn");
+  const refresh=()=>{ startBtn.disabled = !(nameInput.value.trim() && setupAvatar); };
+  nameInput.oninput=refresh;
+  app.querySelectorAll("[data-av]").forEach(a=>a.onclick=()=>{
+    setupAvatar=a.dataset.av;
+    app.querySelectorAll("[data-av]").forEach(x=>x.classList.toggle("sel", x.dataset.av===setupAvatar));
+    refresh();
+  });
+  startBtn.onclick=()=>{
+    const name=nameInput.value.trim();
+    if(!name || !setupAvatar) return;
+    state.me=freshMe(name, setupAvatar);
+    save(); activeTab="home"; render();
+  };
 }
 
 /* =========================================================================
@@ -577,16 +587,23 @@ function viewHome(){
     </div>
 
     <div class="card" style="margin-top:12px">
-      ${next ? `<div style="margin-bottom:10px">Next stop: <b>${next.en}</b> — <span class="muted">${next.at-comb} stars to go</span>${sv(next.sv+" — "+(next.at-comb)+" stjärnor kvar")}</div>`
-        : `<div style="margin-bottom:10px"><b>You finished the whole journey together!</b>${sv("Ni klarade hela resan tillsammans!")}</div>`}
+      ${next ? `<div style="margin-bottom:10px">Next destination unlocks in <b>${next.at-comb} stars</b><div class="muted" style="font-size:12px;margin-top:2px">It's a surprise — keep earning to reveal it!</div>${sv("Nästa stopp avslöjas om "+(next.at-comb)+" stjärnor.")}</div>`
+        : `<div style="margin-bottom:10px"><b>You unlocked the whole journey together!</b>${sv("Ni klarade hela resan tillsammans!")}</div>`}
       <div class="journey">
         ${JOURNEY.map((s,i)=>{
-          const done=comb>=s.at, cur=(i===jIdx);
-          return `<div class="stop ${done?'done':''} ${cur?'current':''}">
-             <div class="dot">${done?s.icon:'🔒'}</div>
+          if(i>jIdx+1) return "";                 // hide future stops — revealed as unlocked
+          if(i===jIdx+1){                          // the next, still-locked stop = a mystery
+            return `<div class="stop current">
+               <div class="dot">🔒</div>
+               <div class="t">Mystery destination</div>
+               <div class="need">${s.at-comb} stars to go</div>
+             </div>`;
+          }
+          return `<div class="stop done">
+             <div class="dot">${s.icon}</div>
              <div class="t">${s.en}</div>
              <div class="s">${s.sv}</div>
-             ${!done?`<div class="need">${s.at} stars</div>`:''}
+             ${s.link?`<a class="readmore" href="${s.link}" target="_blank" rel="noopener">Läs mer ↗</a>`:''}
            </div>`;
         }).join("")}
       </div>
@@ -595,10 +612,10 @@ function viewHome(){
     ${factsUnlocked>0 ? `<h2 class="sec">London facts unlocked</h2>
     <div class="card">
       ${FACTS.slice(0,factsUnlocked).map(f=>`<div class="fact">${f.en}${sv(f.sv)}</div>`).join("")}
-      ${factsUnlocked<FACTS.length?`<div class="muted center" style="font-size:12px;margin-top:10px">🔒 Travel further together to unlock more!</div>`:''}
+      ${factsUnlocked<FACTS.length?`<div class="muted center" style="font-size:12px;margin-top:10px">Travel further together to unlock more!</div>`:''}
     </div>`:''}
 
-    <div style="margin-top:18px"><button class="btn" id="goQuests">🎯 Do today's quests</button></div>
+    <div style="margin-top:18px"><button class="btn" id="goQuests">Do today's quests</button></div>
   </div>`;
 }
 
@@ -671,7 +688,7 @@ function viewBadges(){
 function viewSync(){
   const p=state.partner;
   const myCode=makeCode();
-  const sibling = state.me.id==="august" ? "Lykke" : "August";
+  const sibling = state.partner ? esc(state.partner.nm) : "your sibling";
   return `<div class="screen">
     ${topbar()}
     <div class="card center" style="margin-bottom:12px">
@@ -705,7 +722,7 @@ function viewSync(){
         </div>
         <div class="center" style="margin-top:10px"><span class="pill">⭐ ${combinedStars()} together</span></div>
         <div class="muted center" style="font-size:12px;margin-top:8px">${esc(p.nm)}'s code synced ${agoText(p.t)}</div>`
-       : `<div class="muted" style="font-size:13px;margin-top:8px">Not synced yet. Paste ${sibling}'s code above to combine your points. 💛</div>`}
+       : `<div class="muted" style="font-size:13px;margin-top:8px">Not synced yet. Paste your sibling's code above to combine your points.</div>`}
     </div>
   </div>`;
 }
@@ -737,7 +754,7 @@ function readCode(code){
     code=(code||"").trim();
     if(code.toUpperCase().startsWith("LDN-")) code=code.slice(4);
     const obj=JSON.parse(b64urlDecode(code));
-    if(obj.v!==2 || !obj.id || !(obj.id in IDENTITIES)) return null;
+    if(obj.v!==2 || !obj.id || typeof obj.nm!=="string") return null;
     return obj;
   }catch(e){ return null; }
 }
@@ -909,13 +926,13 @@ function parentDashboard(){
     <label>Sound effects</label>
     <select id="soundSel"><option value="on" ${state.soundOn?'selected':''}>On</option><option value="off" ${!state.soundOn?'selected':''}>Off</option></select>
 
-    <label>Who is this phone?</label>
-    <select id="whoSel">${Object.entries(IDENTITIES).map(([id,o])=>`<option value="${id}" ${m.id===id?'selected':''}>${o.name}</option>`).join("")}</select>
+    <label>Player name</label>
+    <input id="nameInput" value="${esc(m.name)}" maxlength="20">
 
     <label>Character emoji</label>
     <input id="avInput" value="${esc(m.avatar)}" style="text-align:center;font-size:22px">
 
-    <div class="row" style="margin-top:12px"><button class="btn" id="saveSettings">💾 Save settings</button></div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="saveSettings">Save settings</button></div>
 
     <hr class="hr">
     <div style="font-weight:800;margin-bottom:8px">Stats</div>
@@ -936,13 +953,23 @@ function parentDashboard(){
     <button class="btn ghost" id="savePw" style="margin-top:10px">Update password</button>
 
     <hr class="hr">
-    <div style="font-weight:800;margin-bottom:8px" class="danger">⚠️ Reset</div>
+    <div style="font-weight:800;margin-bottom:4px">Move to another device</div>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">Save a full backup (points, completed quests, photos) here, then open the app on the new phone and restore it.</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn outline" id="exportBtn">Save full backup file</button>
+      <input type="file" accept="application/json,.json" id="importFile" class="hide">
+      <button class="btn outline" id="importBtn">Restore from backup file</button>
+    </div>
+
+    <hr class="hr">
+    <div style="font-weight:800;margin-bottom:8px" class="danger">Reset</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <button class="btn outline" id="clearSync">Clear synced sibling data</button>
       <button class="btn" id="resetMe" style="background:var(--red)">Reset ${esc(m.name)}'s progress</button>
     </div>
 
-    <button class="btn ghost" id="closeModal" style="margin-top:16px">Close</button>
+    <div class="muted center" style="font-size:11px;margin-top:14px">Road to London · v${APP_VERSION}</div>
+    <button class="btn ghost" id="closeModal" style="margin-top:10px">Close</button>
   `);
 
   document.getElementById("closeModal").onclick=()=>{ closeModal(); render(); };
@@ -950,19 +977,54 @@ function parentDashboard(){
     state.tripStart=document.getElementById("tripStart").value||TRIP_START;
     state.tripEnd=document.getElementById("tripEnd").value||TRIP_END;
     state.soundOn=document.getElementById("soundSel").value==="on";
-    const newId=document.getElementById("whoSel").value;
-    state.me.id=newId; state.me.name=IDENTITIES[newId].name;
+    state.me.name=document.getElementById("nameInput").value.trim()||state.me.name;
     state.me.avatar=document.getElementById("avInput").value.trim()||state.me.avatar;
-    save(); showToast("Saved ✓"); parentDashboard();
+    save(); showToast("Saved"); parentDashboard();
   };
   document.getElementById("savePw").onclick=()=>{
     const v=document.getElementById("newPw").value.trim();
-    if(v){ state.password=v; save(); showToast("Password updated ✓"); }
+    if(v){ state.password=v; save(); showToast("Password updated"); }
     parentDashboard();
   };
-  document.getElementById("clearSync").onclick=()=>{ state.partner=null; save(); showToast("Sync cleared ✓"); parentDashboard(); };
+  document.getElementById("clearSync").onclick=()=>{ state.partner=null; save(); showToast("Sync cleared"); parentDashboard(); };
   document.getElementById("resetMe").onclick=confirmResetMe;
   document.getElementById("openGallery").onclick=openGallery;
+  document.getElementById("exportBtn").onclick=exportProgress;
+  const impFile=document.getElementById("importFile");
+  document.getElementById("importBtn").onclick=()=>impFile.click();
+  impFile.onchange=()=>{ if(impFile.files[0]) importProgressFile(impFile.files[0]); };
+}
+
+/* Full backup: download the entire saved state (progress + photos) as a file. */
+function exportProgress(){
+  try{
+    const data=JSON.stringify(state);
+    const blob=new Blob([data],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    const who=(state.me&&state.me.name?state.me.name:"backup").replace(/[^a-z0-9]/gi,"-");
+    a.href=url; a.download="road-to-london-"+who+".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    showToast("Backup saved");
+  }catch(e){ alert("Could not create the backup file."); }
+}
+/* Restore a full backup on another device. Replaces everything on this phone. */
+function importProgressFile(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const s=JSON.parse(r.result);
+      if(!s || !s.me || typeof s.me.stars!=="number") throw new Error("bad");
+      state=Object.assign(defaultState(), s);
+      const shape={ stars:0, totalDone:0, catCount:{}, done:{}, streak:0, bestStreak:0, lastActive:null, badges:[], evidence:[] };
+      state.me=Object.assign(shape, s.me);
+      if(!state.me.id) state.me.id=newId();
+      save(); closeModal(); showToast("Progress restored"); render();
+    }catch(e){ alert("That file could not be read as a Road to London backup."); }
+  };
+  r.onerror=()=>alert("Could not read that file.");
+  r.readAsText(file);
 }
 
 function evDate(ts, full){
@@ -1017,7 +1079,7 @@ function confirmResetMe(){
   document.getElementById("confCancel").onclick=parentDashboard;
   document.getElementById("confOk").onclick=()=>{
     if(document.getElementById("confPw").value!==state.password){ document.getElementById("confErr").textContent="Wrong password."; return; }
-    state.me=freshMe(state.me.id, state.me.avatar);
+    state.me=freshMe(state.me.name, state.me.avatar, state.me.id);
     save(); closeModal(); showToast("Progress reset ✓"); render();
   };
 }

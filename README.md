@@ -18,9 +18,11 @@ experience. Progress is saved **on each phone** in the browser.
 
 Each kid plays on their **own phone**:
 
-1. First launch asks **"Who are you?"** → pick **August** or **Lykke**, then **choose a character emoji**.
+1. First launch asks for their **name** and to **pick a character emoji**.
 2. They complete quests and earn ⭐ on their own phone.
 3. The **journey to London is powered by the combined family total** — both kids' stars added together.
+   Destinations stay hidden until unlocked (a surprise reveal), and each London sight has a
+   **"Läs mer"** link to Swedish Wikipedia so they can read about it in Swedish.
 
 ### 🔗 Syncing their points
 Because they're on separate phones, points are combined with a simple **sync code**:
@@ -31,6 +33,11 @@ Because they're on separate phones, points are combined with a simple **sync cod
 - The family total and the London journey now reflect both kids. Re-share after a big session to keep it current.
 
 > The code only carries points/level (no photos), so it's short enough to text.
+
+### 💾 Moving to another device
+To move a kid's whole account (points, completed quests **and** photos) to a new phone, use
+**Parents' Zone → Save full backup file**, then on the new phone open the app and **Restore from
+backup file**. This is different from the points code above, which only combines siblings' totals.
 
 ## 📸 Proof photos
 
@@ -70,8 +77,21 @@ Tap **Parents** in the bottom bar and enter the password to:
 **Default password:** `london2026` — change it in the Parents' Zone right away (the site is public,
 so the default is visible in the source).
 
-## ✏️ Customising the challenges
+## ✏️ Updating content after release (safe for progress)
 
-All challenges live in the `CHALLENGES` array near the top of the `<script>` in `index.html`.
-Each has English text (`en`), a Swedish hint (`sv`), a star value, a category, and a type
-(`daily` / `weekly` / `once`). Add or edit freely — pushes to `main` auto-deploy to the live site.
+Game **content** — categories (`CATS`), challenges (`CHALLENGES`), the journey/levels (`JOURNEY`),
+badges (`BADGES`) and facts (`FACTS`) — all live at the top of the `<script>` in `index.html`.
+Edit them and push to `main`; the live site redeploys and every phone loads the new content on next
+open. Because there is **no service worker**, this works even after "Add to Home Screen".
+
+Player **progress** is stored separately in the browser and is never wiped by a content update.
+Permanent data: **total points**, **completed challenges (+ their proof photos)**, and
+**multi-completion progress** (the `x/10` counters). Progress is keyed by each challenge's `id`, so:
+
+- **Adding** a challenge → it starts fresh at 0 for everyone.
+- **Editing** a challenge (text, stars, icon, `max`, category) → keep its `id` and existing progress
+  is preserved.
+- **Never reuse an `id`** for a different challenge, or its old progress would carry over.
+
+`load()` merges saved progress onto fresh defaults, so new fields added in future releases won't
+break existing players.

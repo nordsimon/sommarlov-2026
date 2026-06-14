@@ -40,8 +40,12 @@ and saved on their phone. Parents can browse every proof photo in the **Parents'
 
 ## 🎮 What's in the game
 
-- **Quests** in 6 categories: Reading & Learning 📚, Active & Outdoors 🏃, Helping at Home 🏠,
-  Creative 🎨, Kindness 💛, English & London 🇬🇧.
+- **Quests** in 9 categories: Reading & Learning 📚, Active & Outdoors 🏃, Elton the Dog 🐶,
+  Cooking & Baking 🍳, Helping at Home 🏠, Gothenburg 🚋 (local outings), Creative 🎨,
+  Kindness 💛, English & London 🇬🇧.
+  - **👪 Parent quests:** activities that need a grown-up (using the stove/oven, paid outings like
+    Liseberg or Universeum, boat tours) are marked **👪 Parent** and require the **parents password**
+    to complete, so a grown-up approves them. No swimming or water/dangerous activities are included.
   - **Daily** quests can be done once per day, up to **10 times** each over the summer (an `x/10`
     counter shows progress). **Weekly** quests reset each week, and **Big quests** are one-time
     goals worth lots of stars.

@@ -231,7 +231,10 @@ const AVATARS = ["🦁","🦊","🐯","🐲","🦄","🐼","🐸","🐵","🦖",
 const CATS = {
   reading:  { name:"Reading & Learning", icon:"📚" },
   active:   { name:"Active & Outdoors",  icon:"🏃" },
+  dog:      { name:"Elton the Dog",      icon:"🐶" },
+  kitchen:  { name:"Cooking & Baking",   icon:"🍳" },
   home:     { name:"Helping at Home",    icon:"🏠" },
+  local:    { name:"Gothenburg",         icon:"🚋" },
   creative: { name:"Creative",           icon:"🎨" },
   kind:     { name:"Kindness",           icon:"💛" },
   english:  { name:"English & London",   icon:"🇬🇧" }
@@ -247,9 +250,40 @@ const CHALLENGES = [
 
   {id:"a1", cat:"active", type:"daily",  stars:15, icon:"🚴", en:"Play outside or ride your bike for 30 minutes", sv:"Lek ute eller cykla i 30 minuter."},
   {id:"a2", cat:"active", type:"daily",  stars:10, icon:"🤸", en:"Do 20 jumping jacks and 10 push-ups", sv:"Gör 20 sprattelgubbar (jumping jacks) och 10 armhävningar."},
-  {id:"a3", cat:"active", type:"daily",  stars:20, icon:"🏊", en:"Go swimming or to the lake", sv:"Bada, simma eller åk till sjön/havet."},
-  {id:"a4", cat:"active", type:"weekly", stars:35, icon:"🥾", en:"Go on a walk or hike in nature", sv:"Gå en promenad eller vandra i naturen."},
+  {id:"a4", cat:"active", type:"weekly", stars:35, icon:"🥾", en:"Go for a walk or hike in the forest", sv:"Gå en promenad eller vandra i skogen."},
   {id:"a5", cat:"active", type:"daily",  stars:10, icon:"⚽", en:"Play a sport or ball game", sv:"Spela en sport eller ett bollspel."},
+  {id:"a6", cat:"active", type:"daily",  stars:15, icon:"🛹", en:"Practise a skill: skateboard, jump rope, football tricks", sv:"Träna en färdighet: skateboard, hopprep eller fotbollstrick."},
+  {id:"a7", cat:"active", type:"weekly", stars:30, icon:"🧗", en:"Go to a playground or outdoor gym", sv:"Gå till en lekplats eller ett utegym."},
+
+  /* ELTON THE DOG 🐶 */
+  {id:"d1", cat:"dog", type:"daily",  stars:15, icon:"🦮", en:"Take Elton for a walk", sv:"Gå ut med Elton på en promenad."},
+  {id:"d2", cat:"dog", type:"daily",  stars:15, icon:"🐾", en:"Teach or practise a trick with Elton", sv:"Lär Elton ett trick eller öva på ett (t.ex. sitt, rulla, tass)."},
+  {id:"d3", cat:"dog", type:"weekly", stars:45, icon:"🌲", en:"Take Elton for a long walk in the forest", sv:"Ta med Elton på en lång skogspromenad."},
+  {id:"d4", cat:"dog", type:"daily",  stars:10, icon:"🪥", en:"Brush Elton or give him fresh water", sv:"Borsta Elton eller ge honom friskt vatten."},
+  {id:"d5", cat:"dog", type:"daily",  stars:10, icon:"🎾", en:"Play fetch or tug with Elton", sv:"Lek apport eller dragkamp med Elton."},
+  {id:"d6", cat:"dog", type:"weekly", stars:35, icon:"🐕", en:"Practise 3 commands with Elton (sit, stay, come)", sv:"Öva 3 kommandon med Elton (sitt, stanna, kom)."},
+  {id:"d7", cat:"dog", type:"weekly", stars:30, icon:"📸", en:"Set up a little dog agility course for Elton", sv:"Bygg en liten hinderbana för Elton."},
+
+  /* COOKING & BAKING 🍳 (stove/oven quests need a parent) */
+  {id:"b1", cat:"kitchen", type:"daily",  stars:15, icon:"🥪", en:"Make your own breakfast or a healthy snack", sv:"Gör din egen frukost eller ett nyttigt mellanmål."},
+  {id:"b2", cat:"kitchen", type:"daily",  stars:15, icon:"🥗", en:"Make a fruit salad or a smoothie", sv:"Gör en fruktsallad eller en smoothie."},
+  {id:"b3", cat:"kitchen", type:"weekly", stars:45, icon:"🧁", needsParent:true, en:"Bake buns or cookies with a parent", sv:"Baka bullar eller kakor tillsammans med en förälder."},
+  {id:"b4", cat:"kitchen", type:"weekly", stars:50, icon:"🍝", needsParent:true, en:"Help cook a dinner on the stove (with a parent)", sv:"Hjälp till att laga en middag på spisen (med en förälder)."},
+  {id:"b5", cat:"kitchen", type:"weekly", stars:45, icon:"🥐", needsParent:true, en:"Bake Swedish 'kanelbullar' (cinnamon buns) with a parent", sv:"Baka kanelbullar tillsammans med en förälder."},
+  {id:"b6", cat:"kitchen", type:"weekly", stars:30, icon:"🍽️", en:"Plan a family meal menu and set a nice table", sv:"Planera en meny för en familjemiddag och duka fint."},
+  {id:"b7", cat:"kitchen", type:"daily",  stars:10, icon:"🧽", en:"Help wash up or load the dishwasher", sv:"Hjälp till att diska eller fylla diskmaskinen."},
+  {id:"b8", cat:"kitchen", type:"weekly", stars:40, icon:"🇬🇧", needsParent:true, en:"Bake or cook something British (scones, pancakes…) with a parent", sv:"Baka eller laga något brittiskt (scones, pannkakor…) med en förälder."},
+
+  /* GOTHENBURG 🚋 (paid attractions and boat trips need a parent) */
+  {id:"g1", cat:"local", type:"weekly", stars:40, icon:"🐧", en:"Explore Slottsskogen and spot the penguins or moose", sv:"Utforska Slottsskogen och spana in pingvinerna eller älgarna."},
+  {id:"g2", cat:"local", type:"weekly", stars:35, icon:"🏘️", en:"Walk around Haga and look at the old wooden houses", sv:"Gå runt i Haga och titta på de gamla trähusen."},
+  {id:"g3", cat:"local", type:"weekly", stars:35, icon:"🌼", en:"Visit Botaniska trädgården and find 3 different flowers", sv:"Besök Botaniska trädgården och hitta 3 olika blommor."},
+  {id:"g4", cat:"local", type:"weekly", stars:30, icon:"📚", en:"Borrow a book from the city library (Stadsbiblioteket)", sv:"Låna en bok på Stadsbiblioteket."},
+  {id:"g5", cat:"local", type:"weekly", stars:30, icon:"💄", en:"Walk by the harbour and find 'Läppstiftet' (the Lipstick building)", sv:"Gå längs hamnen och hitta 'Läppstiftet'."},
+  {id:"g6", cat:"local", type:"weekly", stars:55, icon:"🎢", needsParent:true, en:"Go to Liseberg (with a parent)", sv:"Åk till Liseberg (med en förälder)."},
+  {id:"g7", cat:"local", type:"weekly", stars:50, icon:"🔬", needsParent:true, en:"Visit the Universeum science center (with a parent)", sv:"Besök Universeum (med en förälder)."},
+  {id:"g8", cat:"local", type:"weekly", stars:45, icon:"⛵", needsParent:true, en:"Take a Paddan boat tour (with a parent)", sv:"Åk en Paddan-båttur (med en förälder)."},
+  {id:"g9", cat:"local", type:"weekly", stars:40, icon:"🚢", needsParent:true, en:"Visit the Maritiman floating ships museum (with a parent)", sv:"Besök Maritiman, det flytande fartygsmuseet (med en förälder)."},
 
   {id:"h1", cat:"home", type:"daily",  stars:10, icon:"🛏️", en:"Make your bed and tidy your room", sv:"Bädda din säng och städa ditt rum."},
   {id:"h2", cat:"home", type:"daily",  stars:10, icon:"🍽️", en:"Help set or clear the table", sv:"Hjälp till att duka eller plocka undan bordet."},
@@ -314,6 +348,9 @@ const BADGES = [
   {id:"art",     icon:"🎨", nm:"Artist",       ds:"8 creative quests", test:s=>(s.catCount.creative||0)>=8},
   {id:"kind",    icon:"💛", nm:"Kind Heart",   ds:"10 kindness quests", test:s=>(s.catCount.kind||0)>=10},
   {id:"eng",     icon:"🇬🇧", nm:"English Star", ds:"12 English quests", test:s=>(s.catCount.english||0)>=12},
+  {id:"dog",     icon:"🐶", nm:"Elton's Bestie",ds:"10 Elton quests", test:s=>(s.catCount.dog||0)>=10},
+  {id:"chef",    icon:"🍪", nm:"Little Chef",   ds:"8 cooking quests", test:s=>(s.catCount.kitchen||0)>=8},
+  {id:"explorer",icon:"🚋", nm:"Gbg Explorer",  ds:"6 Gothenburg quests", test:s=>(s.catCount.local||0)>=6},
   {id:"s500",    icon:"🌟", nm:"500 Club",     ds:"Earn 500 stars", test:s=>s.stars>=500},
   {id:"s1500",   icon:"💫", nm:"1500 Club",    ds:"Earn 1500 stars", test:s=>s.stars>=1500},
   {id:"s3000",   icon:"☄️", nm:"Star Legend",  ds:"Earn 3000 stars", test:s=>s.stars>=3000}
@@ -603,7 +640,7 @@ function challengeCard(c){
        <div class="ico">${c.icon}</div>
        <div style="flex:1">
          <div class="en">${esc(c.en)}</div>
-         <div class="meta"><span class="tag">${CATS[c.cat].icon} ${CATS[c.cat].name}</span><span class="tag">${typeLabel}</span>${progressTag}</div>
+         <div class="meta"><span class="tag">${CATS[c.cat].icon} ${CATS[c.cat].name}</span><span class="tag">${typeLabel}</span>${c.needsParent?'<span class="tag" style="background:var(--blue-soft);color:var(--blue)">👪 Parent</span>':''}${progressTag}</div>
        </div>
        <div class="pts">+${c.stars}</div>
      </div>
@@ -713,13 +750,16 @@ function requestComplete(id){
   const c=CHALLENGES.find(x=>x.id===id);
   if(!c || isDone(c) || isMaxed(c)) return;
   let photo=null;
+  const needP=!!c.needsParent;
   openModal(`
     <h3 style="margin:0 0 4px">📸 Show your proof!</h3>
     <div style="font-size:14px">${c.icon} ${esc(c.en)}</div>
-    <div class="sv" style="margin-top:8px"><span class="flag">🇸🇪</span><span>Ta en bild som bevis på att du gjort utmaningen. En förälder kan titta på bilden sen.</span></div>
+    ${needP?`<div class="pill" style="background:var(--blue-soft);color:var(--blue);margin-top:8px">👪 A parent needs to approve this</div>`:''}
+    <div class="sv" style="margin-top:8px"><span class="flag">🇸🇪</span><span>Ta en bild som bevis på att du gjort utmaningen.${needP?' En förälder måste godkänna med lösenordet.':' En förälder kan titta på bilden sen.'}</span></div>
     <div id="evPreview" class="center" style="margin-top:12px"></div>
     <input type="file" accept="image/*" capture="environment" id="evFile" class="hide">
     <button class="btn outline" id="evPick" style="margin-top:12px">📷 Take / choose a photo</button>
+    ${needP?`<label>Parents password</label><input id="parentPw" type="password" autocomplete="off" placeholder="Parent enters password"><div id="pErr" class="danger" style="font-size:13px;margin-top:6px"></div>`:''}
     <div class="row" style="gap:8px;margin-top:12px">
       <button class="btn ghost" id="evCancel" style="flex:1">Cancel</button>
       <button class="btn green" id="evConfirm" style="flex:1" disabled>Complete ✓</button>
@@ -737,7 +777,14 @@ function requestComplete(id){
     });
   };
   document.getElementById("evCancel").onclick=closeModal;
-  document.getElementById("evConfirm").onclick=()=>{ if(!photo) return; closeModal(); completeChallenge(id, photo); };
+  document.getElementById("evConfirm").onclick=()=>{
+    if(!photo) return;
+    if(needP){
+      const pw=document.getElementById("parentPw").value;
+      if(pw!==state.password){ document.getElementById("pErr").textContent="Wrong parents password. (Fel föräldralösenord.)"; return; }
+    }
+    closeModal(); completeChallenge(id, photo);
+  };
 }
 
 /* Downscale + compress an image file to a small JPEG data URL. */

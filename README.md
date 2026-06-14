@@ -35,6 +35,12 @@ Easy quests still pay (10⭐), but harder ones pay much more — weekly quests 2
 farmed quickly: reaching the 9000⭐ top takes steady effort across the summer and lands near the trip.
 
 ### 🔗 Syncing their points
+
+**Easiest: QR code.** On the **Sync** tab each phone shows a **QR code**. The sibling scans it with their
+normal phone camera — it opens the app and combines the points automatically. (The QR encodes a
+`?sync=…` link; QR image generation uses an online service, so it needs internet. Copy/Share the text
+code still works offline.)
+
 Because they're on separate phones, points are combined with a simple **sync code**:
 
 - On the **Sync** tab each phone shows its own `LDN-…` code.

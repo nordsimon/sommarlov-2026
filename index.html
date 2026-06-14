@@ -424,6 +424,8 @@ let previewAll = false;  // Parents' preview: reveal all journey stops (per sess
 let parentUnlocked = false;       // Parents' Zone password gate (per session)
 let parentScreen = "dash";        // dash | gallery | evidence | confirmReset | confirmFull
 let parentEvi = 0;                // index of evidence photo being viewed
+let pendingSync = null;           // a sync code from a scanned QR deep-link (?sync=)
+try{ const _u=new URLSearchParams(location.search); if(_u.get("sync")) pendingSync=_u.get("sync"); }catch(e){}
 
 /* ---------------------------------------------------------------------------
    CONTENT vs PROGRESS
@@ -658,6 +660,7 @@ function render(){
   if(!state.appUnlocked){ renderLock(); return; }
   document.getElementById("nav").classList.remove("hide");
   showFab(true);
+  applyPendingSync();
   document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===activeTab));
   const app=document.getElementById("app");
   if(activeTab==="home") app.innerHTML=viewHome();
@@ -848,17 +851,25 @@ function viewSync(){
   const p=state.partner;
   const myCode=makeCode();
   const sibling = state.partner ? esc(state.partner.nm) : "your sibling";
+  const link = location.origin+location.pathname+"?sync="+encodeURIComponent(myCode);
+  const qr = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data="+encodeURIComponent(link);
   return `<div class="screen">
     ${topbar()}
     <div class="card center" style="margin-bottom:12px">
       <b>Sync your points</b>
-      <div class="muted" style="font-size:13px;margin-top:4px">You each play on your own phone. Share codes so your points add up for the trip.</div>
-      ${sv("Ni spelar på varsin telefon. Dela koder så räknas era poäng ihop till resan.")}
+      <div class="muted" style="font-size:13px;margin-top:4px">You each play on your own phone. Share so your points add up for the trip.</div>
+      ${sv("Ni spelar på varsin telefon. Dela så räknas era poäng ihop till resan.")}
     </div>
 
     <div class="card">
-      <b>1) Send your code to ${sibling}</b>
-      <div class="muted" style="font-size:12px;margin-top:3px">Updates as you earn. Re-send after a big session.</div>
+      <b>1) Show your QR to ${sibling}</b>
+      <div class="muted" style="font-size:12px;margin-top:3px">They scan it with their phone camera — it opens the app and syncs automatically.</div>
+      ${sv(state.partner? "" : "Låt ditt syskon skanna QR-koden med sin kameraapp.")}
+      <div class="center" style="margin-top:12px">
+        <img src="${qr}" alt="Sync QR code" style="width:200px;height:200px;border-radius:12px;background:#fff;border:1px solid var(--line)" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div class="muted" style="display:none;font-size:12px">QR needs internet — use Copy/Share below instead.</div>
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:12px">…or send the code as text:</div>
       <div class="codebox" id="myCode">${myCode}</div>
       <div class="row" style="margin-top:10px;gap:8px">
         <button class="btn outline" id="copyCode" style="flex:1">📋 Copy</button>
@@ -867,7 +878,8 @@ function viewSync(){
     </div>
 
     <div class="card" style="margin-top:12px">
-      <b>2) Paste ${sibling}'s code here</b>
+      <b>2) Got ${sibling}'s code?</b>
+      <div class="muted" style="font-size:12px;margin-top:3px">Scan their QR with your camera, or paste their code here.</div>
       <input id="codeInput" placeholder="LDN-…" autocomplete="off" spellcheck="false">
       <div id="syncErr" class="danger" style="font-size:13px;margin-top:6px"></div>
       <button class="btn green" id="applyCode" style="margin-top:10px">Sync points</button>
@@ -876,12 +888,12 @@ function viewSync(){
     <div class="card" style="margin-top:12px">
       <b>Family status</b>
       ${p ? `<div class="team" style="margin-top:10px">
-          <div class="mate"><div class="av">${state.me.avatar}</div><div class="nm">${esc(state.me.name)} (you)</div><div class="st">⭐ ${state.me.stars}</div></div>
-          <div class="mate"><div class="av">${p.av}</div><div class="nm">${esc(p.nm)}</div><div class="st">⭐ ${p.st} · lvl ${p.lv}</div></div>
+          <div class="mate"><div class="av">${state.me.avatar}</div><div class="nm">${esc(state.me.name)} (you)</div><div class="st">${ico('⭐')}${state.me.stars}</div></div>
+          <div class="mate"><div class="av">${p.av}</div><div class="nm">${esc(p.nm)}</div><div class="st">${ico('⭐')}${p.st} · lvl ${p.lv}</div></div>
         </div>
-        <div class="center" style="margin-top:10px"><span class="pill">⭐ ${combinedStars()} together</span></div>
+        <div class="center" style="margin-top:10px"><span class="pill">${ico('⭐')}${combinedStars()} together</span></div>
         <div class="muted center" style="font-size:12px;margin-top:8px">${esc(p.nm)}'s code synced ${agoText(p.t)}</div>`
-       : `<div class="muted" style="font-size:13px;margin-top:8px">Not synced yet. Paste your sibling's code above to combine your points.</div>`}
+       : `<div class="muted" style="font-size:13px;margin-top:8px">Not synced yet. Scan or paste your sibling's code to combine your points.</div>`}
     </div>
   </div>`;
 }
@@ -913,6 +925,16 @@ function readCode(code){
     if(obj.v!==2 || !obj.id || typeof obj.nm!=="string") return null;
     return obj;
   }catch(e){ return null; }
+}
+/* Apply a sync code that arrived via a scanned QR deep-link (?sync=…). */
+function applyPendingSync(){
+  if(!pendingSync || !state.me || !state.appUnlocked) return;
+  const code=pendingSync; pendingSync=null;
+  try{ history.replaceState(null,"",location.origin+location.pathname); }catch(e){}
+  const obj=readCode(code);
+  if(!obj || obj.id===state.me.id) return;
+  state.partner={id:obj.id,nm:obj.nm,av:obj.av,st:obj.st,lv:obj.lv,td:obj.td,bs:obj.bs,bc:obj.bc,t:obj.t};
+  save(); burstConfetti(); showToast("Synced with "+obj.nm);
 }
 
 /* =========================================================================

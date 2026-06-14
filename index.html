@@ -55,8 +55,9 @@
   .muted{color:var(--muted)}
   .center{text-align:center}
   .row{display:flex;align-items:center;gap:10px}
-  .sv{color:#9a6b12;font-size:13px;display:flex;gap:6px;align-items:flex-start;line-height:1.4}
-  .sv .flag{flex:none}
+  .sv{color:#8a6a2f;font-size:12.5px;line-height:1.45;margin-top:6px;position:relative;padding-left:28px}
+  .sv::before{content:"SV";position:absolute;left:0;top:0;font-size:9px;font-weight:800;letter-spacing:.5px;
+    color:#a9803a;background:var(--amber-soft);border:1px solid #efdfbd;border-radius:5px;padding:1px 5px}
   .hide{display:none !important}
   .pill{display:inline-flex;align-items:center;gap:6px;background:var(--amber-soft);color:#9a6b12;
     border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700}
@@ -435,6 +436,8 @@ function combinedStars(){ return state.me.stars + (state.partner ? state.partner
 function journeyIndex(stars){ let i=0; JOURNEY.forEach((s,k)=>{ if(stars>=s.at) i=k; }); return i; }
 function daysToTrip(){ const t=new Date(state.tripStart+"T00:00:00"); const n=new Date(); n.setHours(0,0,0,0); return Math.max(0,Math.round((t-n)/86400000)); }
 function esc(s){ return (s+"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+/* Slim Swedish hint: one helper, consistent compact styling everywhere. */
+function sv(t){ return `<div class="sv">${esc(t)}</div>`; }
 const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function tripRange(){
   const a=new Date(state.tripStart+"T00:00:00"), b=new Date(state.tripEnd+"T00:00:00");
@@ -464,7 +467,7 @@ function renderSetup(){
     <div class="card center">
       <b>Who are you?</b>
       <div class="muted" style="font-size:13px;margin-top:4px">Pick yourself. Your sibling uses their own phone.</div>
-      <div class="sv center" style="justify-content:center;margin-top:6px"><span class="flag">🇸🇪</span><span>Välj dig själv. Ditt syskon använder sin egen telefon.</span></div>
+      ${sv("Välj dig själv. Ditt syskon använder sin egen telefon.")}
     </div>
     <div class="pickgrid" id="idPick">
       ${Object.entries(IDENTITIES).map(([id,m])=>`
@@ -487,7 +490,7 @@ function renderAvatarPick(){
     </div>
     <div class="card center">
       <b>Pick your character</b>
-      <div class="sv center" style="justify-content:center;margin-top:4px"><span class="flag">🇸🇪</span><span>Välj din figur (emoji).</span></div>
+      ${sv("Välj din figur.")}
       <div class="avatars" id="avPick">
         ${AVATARS.map(a=>`<div class="avo ${setupAvatar===a?'sel':''}" data-av="${a}">${a}</div>`).join("")}
       </div>
@@ -555,7 +558,7 @@ function viewHome(){
       <div class="stat"><div class="v">${m.totalDone}</div><div class="l">Total quests</div></div>
     </div>
 
-    <h2 class="sec">Our family journey ✈️</h2>
+    <h2 class="sec">Our family journey</h2>
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <div style="font-weight:800">London trip</div>
@@ -574,15 +577,15 @@ function viewHome(){
     </div>
 
     <div class="card" style="margin-top:12px">
-      ${next ? `<div class="center" style="margin-bottom:10px">Next stop: <b>${next.icon} ${next.en}</b> — <span class="muted">${next.at-comb} stars to go</span><div class="sv center" style="justify-content:center"><span class="flag">🇸🇪</span><span>${next.sv} — ${next.at-comb} stjärnor kvar</span></div></div>`
-        : `<div class="center" style="margin-bottom:10px">👑 <b>You finished the whole journey together!</b><div class="sv center" style="justify-content:center"><span class="flag">🇸🇪</span><span>Ni klarade hela resan tillsammans!</span></div></div>`}
+      ${next ? `<div style="margin-bottom:10px">Next stop: <b>${next.icon} ${next.en}</b> — <span class="muted">${next.at-comb} stars to go</span>${sv(next.sv+" — "+(next.at-comb)+" stjärnor kvar")}</div>`
+        : `<div style="margin-bottom:10px"><b>You finished the whole journey together!</b>${sv("Ni klarade hela resan tillsammans!")}</div>`}
       <div class="journey">
         ${JOURNEY.map((s,i)=>{
           const done=comb>=s.at, cur=(i===jIdx);
           return `<div class="stop ${done?'done':''} ${cur?'current':''}">
              <div class="dot">${done?s.icon:'🔒'}</div>
              <div class="t">${s.icon} ${s.en}</div>
-             <div class="s">🇸🇪 ${s.sv}</div>
+             <div class="s">${s.sv}</div>
              ${!done?`<div class="need">${s.at} stars</div>`:''}
            </div>`;
         }).join("")}
@@ -591,7 +594,7 @@ function viewHome(){
 
     ${factsUnlocked>0 ? `<h2 class="sec">London facts unlocked</h2>
     <div class="card">
-      ${FACTS.slice(0,factsUnlocked).map(f=>`<div class="fact">${f.en}<div class="sv"><span class="flag">🇸🇪</span><span>${f.sv}</span></div></div>`).join("")}
+      ${FACTS.slice(0,factsUnlocked).map(f=>`<div class="fact">${f.en}${sv(f.sv)}</div>`).join("")}
       ${factsUnlocked<FACTS.length?`<div class="muted center" style="font-size:12px;margin-top:10px">🔒 Travel further together to unlock more!</div>`:''}
     </div>`:''}
 
@@ -608,9 +611,8 @@ function viewChallenges(){
   return `<div class="screen">
     ${topbar()}
     <div class="card center" style="margin-bottom:8px">
-      <b>🎯 Quests</b>
+      <b>Quests</b>
       <div class="muted" style="font-size:12px;margin-top:3px">Tap "Need help?" for a Swedish hint.</div>
-      <div class="sv center" style="justify-content:center"><span class="flag">🇸🇪</span><span>Tryck på "Need help?" för en svensk ledtråd.</span></div>
     </div>
     <div class="chips">
       ${cats.map(c=>`<button class="chip ${activeCat===c?'active':''}" data-cat="${c}">${c==="all"?"✨ All":CATS[c].icon+" "+CATS[c].name}</button>`).join("")}
@@ -621,17 +623,17 @@ function viewChallenges(){
 function challengeCard(c){
   const doneToday=isDone(c);
   const max=maxCount(c), times=max!=null?timesDone(c):0, maxed=isMaxed(c);
-  const typeLabel=c.type==="daily"?"Daily":c.type==="weekly"?"Weekly":"Big quest ⭐";
+  const typeLabel=c.type==="daily"?"Daily":c.type==="weekly"?"Weekly":"Big quest";
   const dim = maxed || doneToday;
   let badge="";
   if(maxed) badge=`<div class="done-badge">🏁 ${times}/${max}</div>`;
   else if(doneToday) badge=`<div class="done-badge">✓ Today</div>`;
-  const progressTag = max!=null ? `<span class="tag">⭐ ${times}/${max} done</span>` : "";
+  const progressTag = max!=null ? `<span class="tag">${times}/${max} done</span>` : "";
   let footer;
-  if(maxed) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">🏁 All done — you completed this ${max} times!</div>`;
-  else if(doneToday) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">✓ Done today — come back tomorrow${max!=null?` (${times}/${max})`:""} 🌙</div>`;
+  if(maxed) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">All done — you completed this ${max} times!</div>`;
+  else if(doneToday) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">Done today — come back tomorrow${max!=null?` (${times}/${max})`:""}</div>`;
   else footer=`<div class="actions">
-        <button class="btn small ghost" data-help="${c.id}">💡 Need help?</button>
+        <button class="btn small ghost" data-help="${c.id}">Need help?</button>
         <button class="btn small green" data-complete="${c.id}" style="flex:1">Complete ✓</button>
      </div>`;
   return `<div class="card ch ${dim?'done':''}">
@@ -644,7 +646,7 @@ function challengeCard(c){
        </div>
        <div class="pts">+${c.stars}</div>
      </div>
-     <div class="svbox" id="sv-${c.id}"><div class="sv"><span class="flag">🇸🇪</span><span>${esc(c.sv)}</span></div></div>
+     <div class="svbox" id="sv-${c.id}">${sv(c.sv)}</div>
      ${footer}
    </div>`;
 }
@@ -654,9 +656,8 @@ function viewBadges(){
   return `<div class="screen">
     ${topbar()}
     <div class="card center" style="margin-bottom:12px">
-      <b>🏅 Your Badges</b>
+      <b>Your Badges</b>
       <div class="muted" style="font-size:13px;margin-top:4px">${m.badges.length} / ${BADGES.length} unlocked</div>
-      <div class="sv center" style="justify-content:center"><span class="flag">🇸🇪</span><span>Samla märken genom att klara utmaningar!</span></div>
     </div>
     <div class="badgegrid">
       ${BADGES.map(b=>{
@@ -674,9 +675,9 @@ function viewSync(){
   return `<div class="screen">
     ${topbar()}
     <div class="card center" style="margin-bottom:12px">
-      <b>🔗 Sync your points</b>
+      <b>Sync your points</b>
       <div class="muted" style="font-size:13px;margin-top:4px">You each play on your own phone. Share codes so your points add up for the trip.</div>
-      <div class="sv center" style="justify-content:center"><span class="flag">🇸🇪</span><span>Ni spelar på varsin telefon. Dela koder så räknas era poäng ihop till resan.</span></div>
+      ${sv("Ni spelar på varsin telefon. Dela koder så räknas era poäng ihop till resan.")}
     </div>
 
     <div class="card">
@@ -715,8 +716,7 @@ function viewParent(){
     <div class="card center">
       <div style="font-size:38px">🔒</div>
       <b>Parents' Zone</b>
-      <div class="muted" style="font-size:13px;margin:6px 0 12px">Password needed to change settings or reset progress.</div>
-      <div class="sv center" style="justify-content:center;margin-bottom:14px"><span class="flag">🇸🇪</span><span>Föräldrazon — lösenord krävs för att ändra eller nollställa.</span></div>
+      <div class="muted" style="font-size:13px;margin:6px 0 14px">Password needed to change settings or reset progress.</div>
       <button class="btn" id="unlockParent">Unlock with password</button>
     </div>
   </div>`;
@@ -752,10 +752,10 @@ function requestComplete(id){
   let photo=null;
   const needP=!!c.needsParent;
   openModal(`
-    <h3 style="margin:0 0 4px">📸 Show your proof!</h3>
+    <h3 style="margin:0 0 4px">Add a proof photo</h3>
     <div style="font-size:14px">${c.icon} ${esc(c.en)}</div>
     ${needP?`<div class="pill" style="background:var(--blue-soft);color:var(--blue);margin-top:8px">👪 A parent needs to approve this</div>`:''}
-    <div class="sv" style="margin-top:8px"><span class="flag">🇸🇪</span><span>Ta en bild som bevis på att du gjort utmaningen.${needP?' En förälder måste godkänna med lösenordet.':' En förälder kan titta på bilden sen.'}</span></div>
+    ${sv("Ta en bild som bevis på att du gjort utmaningen."+(needP?" En förälder måste godkänna med lösenordet.":" En förälder kan titta på bilden sen."))}
     <div id="evPreview" class="center" style="margin-top:12px"></div>
     <input type="file" accept="image/*" capture="environment" id="evFile" class="hide">
     <button class="btn outline" id="evPick" style="margin-top:12px">📷 Take / choose a photo</button>
@@ -831,7 +831,7 @@ function completeChallenge(id, photo){
   BADGES.forEach(b=>{ if(!m.badges.includes(b.id) && b.test(m)) m.badges.push(b.id); });
   save();
   burstConfetti(); beep();
-  showToast(`+${c.stars} ⭐ Nice work!`+(m.badges.length>before?"\n🏅 New badge unlocked!":""));
+  showToast(`+${c.stars} ⭐ Nice work!`+(m.badges.length>before?"\nNew badge unlocked!":""));
   render();
 }
 
@@ -881,7 +881,7 @@ function closeModal(){ document.getElementById("overlay").classList.remove("show
 function parentPasswordPrompt(){
   openModal(`
     <h3 style="margin:0 0 6px">🔒 Enter password</h3>
-    <div class="sv" style="margin-bottom:6px"><span class="flag">🇸🇪</span><span>Skriv föräldralösenordet.</span></div>
+    ${sv("Skriv föräldralösenordet.")}
     <input id="pwInput" type="password" placeholder="Password" autocomplete="off">
     <div id="pwErr" class="danger" style="font-size:13px;margin-top:8px"></div>
     <div class="row" style="gap:8px;margin-top:14px">
@@ -926,7 +926,7 @@ function parentDashboard(){
     </div>
 
     <hr class="hr">
-    <div style="font-weight:800;margin-bottom:8px">📸 Proof photos</div>
+    <div style="font-weight:800;margin-bottom:8px">Proof photos</div>
     <div class="muted" style="font-size:12px;margin-bottom:8px">Photos ${esc(m.name)} took to prove each completed quest.</div>
     <button class="btn outline" id="openGallery">View proof gallery (${(m.evidence||[]).length})</button>
 
@@ -974,7 +974,7 @@ function evDate(ts, full){
 function openGallery(){
   const ev=state.me.evidence||[];
   openModal(`
-    <h3 style="margin:0 0 4px">📸 Proof gallery</h3>
+    <h3 style="margin:0 0 4px">Proof gallery</h3>
     <div class="muted" style="font-size:12px;margin-bottom:10px">${ev.length} photo(s) · newest first · tap to enlarge.</div>
     ${ev.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         ${ev.map((e,i)=>`<div data-ev="${i}" style="cursor:pointer">
@@ -1006,7 +1006,7 @@ function confirmResetMe(){
   openModal(`
     <h3 style="margin:0 0 6px" class="danger">⚠️ Are you sure?</h3>
     <p style="font-size:14px">This permanently erases <b>${esc(state.me.name)}'s</b> progress (stars, badges, streak). Identity and synced sibling data stay.</p>
-    <div class="sv"><span class="flag">🇸🇪</span><span>Detta raderar ${esc(state.me.name)}s framsteg. Går inte att ångra.</span></div>
+    ${sv("Detta raderar "+state.me.name+"s framsteg. Går inte att ångra.")}
     <label>Type the password to confirm</label>
     <input id="confPw" type="password" autocomplete="off">
     <div id="confErr" class="danger" style="font-size:13px;margin-top:8px"></div>

@@ -19,9 +19,10 @@ experience. Progress is saved **on each phone** in the browser.
 Each kid plays on their **own phone**:
 
 1. First launch asks for their **name** and to **pick a character emoji**.
-2. They complete quests and earn ⭐ on their own phone.
-3. The **journey to London is powered by the combined family total** — both kids' stars added together.
-   Destinations stay hidden until unlocked (a surprise reveal), and each London sight has a
+2. After that the app asks for an **unlock password** (default **`london`**) each time it opens.
+3. They complete quests and earn ⭐ on their own phone.
+4. The **journey to London is powered by the combined family total** — both kids' stars added together.
+   All destinations are shown with the **points needed** to reach them, and each London sight has a
    **"Läs mer"** link to Swedish Wikipedia so they can read about it in Swedish.
 
 ### 🔗 Syncing their points
@@ -69,6 +70,8 @@ and saved on their phone. Parents can browse every proof photo in the **Parents'
 Tap **Parents** in the bottom bar and enter the password to:
 
 - View the **proof photo gallery**.
+- **Unlock all stops (preview)** to verify the "Läs mer" links, and **Update app** to refetch the latest version.
+- Change the **app unlock password** (default `london`).
 - Change the **trip dates** and toggle **sound**.
 - Change **which kid** this phone belongs to and the **character emoji**.
 - **Change the password.**

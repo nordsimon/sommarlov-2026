@@ -55,7 +55,8 @@
   .btn.ghost{background:var(--bg2);color:var(--ink);box-shadow:none}
   .btn.outline{background:#fff;color:var(--blue);box-shadow:none;border:1.5px solid var(--line)}
   .btn.small{padding:9px 13px;font-size:13px;width:auto;border-radius:11px}
-  .card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);border:1px solid var(--line)}
+  .card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);border:1px solid var(--line);margin-bottom:12px}
+  .card:last-child{margin-bottom:0}
   .muted{color:var(--muted)}
   .center{text-align:center}
   .row{display:flex;align-items:center;gap:10px}
@@ -116,9 +117,11 @@
   .mate .st{font-size:13px;color:var(--muted)}
   .mate.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
 
-  .countdown{display:flex;justify-content:space-around;text-align:center;margin-top:14px}
-  .countdown .v{font-size:25px;font-weight:800;color:var(--blue)}
-  .countdown .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+  .countdown{display:flex;text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .countdown>div{flex:1}
+  .countdown .v{font-size:24px;font-weight:800;color:var(--blue);height:30px;display:flex;align-items:center;justify-content:center}
+  .countdown .v.sm{font-size:14px}
+  .countdown .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
 
   h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:24px 4px 10px;font-weight:800}
 
@@ -224,7 +227,8 @@
 
 const STORE_KEY = "roadToLondon_v2";
 const APP_VERSION = "2026.06.14";   // bumped on each release; shown in Parents' Zone
-const DEFAULT_PASSWORD = "london2026";
+const DEFAULT_PASSWORD = "london2026"; // parents' password (settings/resets)
+const APP_PASSWORD = "london";         // simple password to unlock the app
 const TRIP_START = "2026-10-25";   // London trip
 const TRIP_END   = "2026-10-28";
 
@@ -384,7 +388,7 @@ function freshMe(name, avatar, id){
 }
 const EVIDENCE_CAP = 60; // keep this many newest proof photos (storage friendly)
 function defaultState(){
-  return { version:2, password:DEFAULT_PASSWORD, tripStart:TRIP_START, tripEnd:TRIP_END,
+  return { version:2, password:DEFAULT_PASSWORD, appPassword:APP_PASSWORD, tripStart:TRIP_START, tripEnd:TRIP_END,
     soundOn:true, me:null, partner:null };
 }
 
@@ -392,6 +396,8 @@ let state = load();
 let activeTab = "home";
 let activeCat = "all";
 let setupAvatar = null;
+let unlocked = false;    // app-unlock gate (per session)
+let previewAll = false;  // Parents' preview: reveal all journey stops (per session)
 
 /* ---------------------------------------------------------------------------
    CONTENT vs PROGRESS
@@ -516,11 +522,49 @@ function renderSetup(){
   };
 }
 
+/* App-unlock screen (password "london" by default). */
+function renderLock(){
+  document.getElementById("nav").classList.add("hide");
+  const app=document.getElementById("app");
+  app.innerHTML=`
+   <div class="screen">
+    <div class="brand">
+      <span class="plane">✈️</span>
+      <h1>Road to London</h1>
+      <div class="stripe"></div>
+    </div>
+    <div class="card">
+      <div class="center" style="font-weight:800">Hi ${esc(state.me.name)} ${state.me.avatar}</div>
+      <label>Password to unlock</label>
+      <input id="unlockInput" type="password" placeholder="Password" autocomplete="off">
+      ${sv("Skriv lösenordet för att låsa upp appen.")}
+      <div id="unlockErr" class="danger" style="font-size:13px;margin-top:8px"></div>
+      <button class="btn" id="unlockBtn" style="margin-top:14px">Unlock</button>
+    </div>
+    <div class="center" style="margin-top:14px"><button class="btn ghost small" id="updateBtn">↻ Update app</button></div>
+   </div>`;
+  const input=document.getElementById("unlockInput");
+  input.focus();
+  const submit=()=>{
+    if(input.value===state.appPassword){ unlocked=true; activeTab="home"; render(); }
+    else { document.getElementById("unlockErr").textContent="Wrong password."; input.value=""; input.focus(); }
+  };
+  document.getElementById("unlockBtn").onclick=submit;
+  input.onkeydown=e=>{ if(e.key==="Enter") submit(); };
+  document.getElementById("updateBtn").onclick=updateApp;
+}
+
+/* Refetch the latest version of the page (cache-busting). */
+function updateApp(){
+  location.replace(location.origin+location.pathname+"?u="+Date.now());
+}
+
 /* =========================================================================
    RENDER ROUTER
    ========================================================================= */
 function render(){
   if(!state.me){ renderSetup(); return; }
+  if(!unlocked){ renderLock(); return; }
   document.getElementById("nav").classList.remove("hide");
   document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===activeTab));
   const app=document.getElementById("app");
@@ -547,7 +591,7 @@ function viewHome(){
   const jIdx=journeyIndex(comb), next=JOURNEY[jIdx+1];
   const today=todayStr();
   const doneToday=Object.keys(m.done).filter(k=>k.endsWith("|"+today)).length;
-  const factsUnlocked=Math.min(jIdx, FACTS.length);
+  const factsUnlocked=previewAll ? FACTS.length : Math.min(jIdx, FACTS.length);
   const p=state.partner;
 
   return `<div class="screen">
@@ -582,28 +626,25 @@ function viewHome(){
       <div class="countdown">
         <div><div class="v">${daysToTrip()}</div><div class="l">Days to go</div></div>
         <div><div class="v">${Math.ceil(daysToTrip()/7)}</div><div class="l">Weeks</div></div>
-        <div><div class="v" style="font-size:15px;padding-top:6px">${tripRange()}</div><div class="l">Trip dates</div></div>
+        <div><div class="v sm">${tripRange()}</div><div class="l">Trip dates</div></div>
       </div>
     </div>
 
-    <div class="card" style="margin-top:12px">
-      ${next ? `<div style="margin-bottom:10px">Next destination unlocks in <b>${next.at-comb} stars</b><div class="muted" style="font-size:12px;margin-top:2px">It's a surprise — keep earning to reveal it!</div>${sv("Nästa stopp avslöjas om "+(next.at-comb)+" stjärnor.")}</div>`
-        : `<div style="margin-bottom:10px"><b>You unlocked the whole journey together!</b>${sv("Ni klarade hela resan tillsammans!")}</div>`}
+    <div class="card">
+      ${previewAll ? `<div class="muted center" style="font-size:12px;margin-bottom:12px">Preview mode: all stops unlocked</div>`
+        : next ? `<div style="margin-bottom:12px">Next stop: <b>${next.en}</b><div class="muted" style="font-size:12px;margin-top:2px">${next.at-comb} stars to go</div></div>`
+        : `<div style="margin-bottom:12px"><b>You reached the whole journey together!</b>${sv("Ni klarade hela resan tillsammans!")}</div>`}
       <div class="journey">
         ${JOURNEY.map((s,i)=>{
-          if(i>jIdx+1) return "";                 // hide future stops — revealed as unlocked
-          if(i===jIdx+1){                          // the next, still-locked stop = a mystery
-            return `<div class="stop current">
-               <div class="dot">🔒</div>
-               <div class="t">Mystery destination</div>
-               <div class="need">${s.at-comb} stars to go</div>
-             </div>`;
-          }
-          return `<div class="stop done">
-             <div class="dot">${s.icon}</div>
+          const done = previewAll || comb>=s.at;
+          const cur = !previewAll && i===jIdx+1;
+          return `<div class="stop ${done?'done':''} ${cur?'current':''}">
+             <div class="dot">${done?s.icon:'🔒'}</div>
              <div class="t">${s.en}</div>
              <div class="s">${s.sv}</div>
-             ${s.link?`<a class="readmore" href="${s.link}" target="_blank" rel="noopener">Läs mer ↗</a>`:''}
+             ${done
+                ? (s.link?`<a class="readmore" href="${s.link}" target="_blank" rel="noopener">Läs mer ↗</a>`:'')
+                : `<div class="need">${s.at} stars${comb<s.at?` · ${s.at-comb} to go`:''}</div>`}
            </div>`;
         }).join("")}
       </div>
@@ -932,6 +973,9 @@ function parentDashboard(){
     <label>Character emoji</label>
     <input id="avInput" value="${esc(m.avatar)}" style="text-align:center;font-size:22px">
 
+    <label>App unlock password</label>
+    <input id="appPwInput" value="${esc(state.appPassword)}">
+
     <div class="row" style="margin-top:12px"><button class="btn" id="saveSettings">Save settings</button></div>
 
     <hr class="hr">
@@ -946,6 +990,14 @@ function parentDashboard(){
     <div style="font-weight:800;margin-bottom:8px">Proof photos</div>
     <div class="muted" style="font-size:12px;margin-bottom:8px">Photos ${esc(m.name)} took to prove each completed quest.</div>
     <button class="btn outline" id="openGallery">View proof gallery (${(m.evidence||[]).length})</button>
+
+    <hr class="hr">
+    <div style="font-weight:800;margin-bottom:4px">Preview &amp; updates</div>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">Unlock every journey stop to check the links, or fetch the latest app version.</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn outline" id="previewBtn">${previewAll?"Turn off preview (re-lock stops)":"Unlock all stops (preview)"}</button>
+      <button class="btn outline" id="updateBtn2">↻ Update app (refetch)</button>
+    </div>
 
     <hr class="hr">
     <label>Change password</label>
@@ -979,6 +1031,7 @@ function parentDashboard(){
     state.soundOn=document.getElementById("soundSel").value==="on";
     state.me.name=document.getElementById("nameInput").value.trim()||state.me.name;
     state.me.avatar=document.getElementById("avInput").value.trim()||state.me.avatar;
+    state.appPassword=document.getElementById("appPwInput").value.trim()||state.appPassword;
     save(); showToast("Saved"); parentDashboard();
   };
   document.getElementById("savePw").onclick=()=>{
@@ -989,6 +1042,8 @@ function parentDashboard(){
   document.getElementById("clearSync").onclick=()=>{ state.partner=null; save(); showToast("Sync cleared"); parentDashboard(); };
   document.getElementById("resetMe").onclick=confirmResetMe;
   document.getElementById("openGallery").onclick=openGallery;
+  document.getElementById("previewBtn").onclick=()=>{ previewAll=!previewAll; closeModal(); activeTab="home"; showToast(previewAll?"Preview on — all stops unlocked":"Preview off"); render(); };
+  document.getElementById("updateBtn2").onclick=updateApp;
   document.getElementById("exportBtn").onclick=exportProgress;
   const impFile=document.getElementById("importFile");
   document.getElementById("importBtn").onclick=()=>impFile.click();

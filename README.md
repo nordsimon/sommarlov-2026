@@ -42,8 +42,9 @@ and saved on their phone. Parents can browse every proof photo in the **Parents'
 
 - **Quests** in 6 categories: Reading & Learning 📚, Active & Outdoors 🏃, Helping at Home 🏠,
   Creative 🎨, Kindness 💛, English & London 🇬🇧.
-  - **Daily** quests reset every morning, **Weekly** quests each week, and **Big quests** are
-    one-time goals worth lots of stars.
+  - **Daily** quests can be done once per day, up to **10 times** each over the summer (an `x/10`
+    counter shows progress). **Weekly** quests reset each week, and **Big quests** are one-time
+    goals worth lots of stars.
   - Each quest has a **"Need help?"** button with a Swedish hint.
 - **Stars ⭐** → **Levels & rank titles** (Rookie Traveller → … → London Legend).
 - **Combined journey map** from Sweden to London landmarks (Big Ben, London Eye, Tower Bridge,

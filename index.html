@@ -386,6 +386,12 @@ function periodKey(ch){
   return ch.id+"|once";
 }
 function isDone(ch){ return !!state.me.done[periodKey(ch)]; }
+/* How many times this quest may be completed in total (daily quests are
+   capped: once per day, up to this many times over the summer). */
+function maxCount(ch){ return ch.max!==undefined ? ch.max : (ch.type==="daily" ? 10 : null); }
+/* Total times completed so far (counts each distinct day/week stamp). */
+function timesDone(ch){ const pre=ch.id+"|"; return Object.keys(state.me.done).filter(k=>k.indexOf(pre)===0).length; }
+function isMaxed(ch){ const m=maxCount(ch); return m!=null && timesDone(ch)>=m; }
 function levelOf(stars){ return Math.floor(stars/STARS_PER_LEVEL)+1; }
 function rankOf(stars){ return RANKS[Math.min(levelOf(stars)-1, RANKS.length-1)]; }
 function combinedStars(){ return state.me.stars + (state.partner ? state.partner.st : 0); }
@@ -560,7 +566,8 @@ function viewChallenges(){
   const cats=["all", ...Object.keys(CATS)];
   const list=CHALLENGES.filter(c=> activeCat==="all" ? true : c.cat===activeCat);
   const order={daily:0,weekly:1,once:2};
-  list.sort((a,b)=>{ const da=isDone(a),db=isDone(b); if(da!==db) return da?1:-1; return order[a.type]-order[b.type]; });
+  const rank=c=> isMaxed(c) ? 2 : (isDone(c) ? 1 : 0);
+  list.sort((a,b)=>{ const r=rank(a)-rank(b); if(r) return r; return order[a.type]-order[b.type]; });
   return `<div class="screen">
     ${topbar()}
     <div class="card center" style="margin-bottom:8px">
@@ -575,23 +582,33 @@ function viewChallenges(){
   </div>`;
 }
 function challengeCard(c){
-  const done=isDone(c);
+  const doneToday=isDone(c);
+  const max=maxCount(c), times=max!=null?timesDone(c):0, maxed=isMaxed(c);
   const typeLabel=c.type==="daily"?"Daily":c.type==="weekly"?"Weekly":"Big quest ⭐";
-  return `<div class="card ch ${done?'done':''}">
-     ${done?'<div class="done-badge">✓ Done</div>':''}
+  const dim = maxed || doneToday;
+  let badge="";
+  if(maxed) badge=`<div class="done-badge">🏁 ${times}/${max}</div>`;
+  else if(doneToday) badge=`<div class="done-badge">✓ Today</div>`;
+  const progressTag = max!=null ? `<span class="tag">⭐ ${times}/${max} done</span>` : "";
+  let footer;
+  if(maxed) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">🏁 All done — you completed this ${max} times!</div>`;
+  else if(doneToday) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">✓ Done today — come back tomorrow${max!=null?` (${times}/${max})`:""} 🌙</div>`;
+  else footer=`<div class="actions">
+        <button class="btn small ghost" data-help="${c.id}">💡 Need help?</button>
+        <button class="btn small green" data-complete="${c.id}" style="flex:1">Complete ✓</button>
+     </div>`;
+  return `<div class="card ch ${dim?'done':''}">
+     ${badge}
      <div class="top">
        <div class="ico">${c.icon}</div>
        <div style="flex:1">
          <div class="en">${esc(c.en)}</div>
-         <div class="meta"><span class="tag">${CATS[c.cat].icon} ${CATS[c.cat].name}</span><span class="tag">${typeLabel}</span></div>
+         <div class="meta"><span class="tag">${CATS[c.cat].icon} ${CATS[c.cat].name}</span><span class="tag">${typeLabel}</span>${progressTag}</div>
        </div>
        <div class="pts">+${c.stars}</div>
      </div>
      <div class="svbox" id="sv-${c.id}"><div class="sv"><span class="flag">🇸🇪</span><span>${esc(c.sv)}</span></div></div>
-     ${done?'':`<div class="actions">
-        <button class="btn small ghost" data-help="${c.id}">💡 Need help?</button>
-        <button class="btn small green" data-complete="${c.id}" style="flex:1">Complete ✓</button>
-     </div>`}
+     ${footer}
    </div>`;
 }
 
@@ -694,7 +711,7 @@ function readCode(code){
 /* Ask for a proof photo before completing. The photo is required. */
 function requestComplete(id){
   const c=CHALLENGES.find(x=>x.id===id);
-  if(!c || isDone(c)) return;
+  if(!c || isDone(c) || isMaxed(c)) return;
   let photo=null;
   openModal(`
     <h3 style="margin:0 0 4px">📸 Show your proof!</h3>
@@ -746,7 +763,7 @@ function shrinkImage(file, cb){
 function completeChallenge(id, photo){
   const m=state.me;
   const c=CHALLENGES.find(x=>x.id===id);
-  if(!c || isDone(c)) return;
+  if(!c || isDone(c) || isMaxed(c)) return;
   const today=todayStr();
   if(m.lastActive!==today){
     const y=new Date(); y.setDate(y.getDate()-1);
@@ -912,10 +929,11 @@ function openGallery(){
   openModal(`
     <h3 style="margin:0 0 4px">📸 Proof gallery</h3>
     <div class="muted" style="font-size:12px;margin-bottom:10px">${ev.length} photo(s) · newest first · tap to enlarge.</div>
-    ${ev.length ? `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+    ${ev.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         ${ev.map((e,i)=>`<div data-ev="${i}" style="cursor:pointer">
             <img src="${e.img}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line)">
-            <div class="muted center" style="font-size:9px;margin-top:2px">${e.icon} ${evDate(e.ts)}</div>
+            <div style="font-size:11px;font-weight:700;margin-top:4px;line-height:1.25">${e.icon} ${esc(e.en)}</div>
+            <div class="muted" style="font-size:10px">${evDate(e.ts,true)}</div>
           </div>`).join("")}
       </div>` : `<div class="muted">No photos yet. They appear here when ${esc(state.me.name)} completes a quest.</div>`}
     <button class="btn ghost" id="galBack" style="margin-top:16px">Back</button>`);

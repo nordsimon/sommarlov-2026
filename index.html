@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0b1f4d" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Road to London 🇬🇧 — Summer Challenge</title>
+<style>
+  :root{
+    --uk-blue:#0b1f4d;
+    --uk-blue2:#13327a;
+    --uk-red:#cf142b;
+    --uk-white:#ffffff;
+    --gold:#ffd34e;
+    --green:#36c275;
+    --card:#13235c;
+    --card2:#1b3175;
+    --ink:#eaf0ff;
+    --muted:#a7b6e6;
+    --shadow:0 8px 24px rgba(0,0,0,.35);
+    --r:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #1c399a 0%, rgba(28,57,154,0) 60%),
+      linear-gradient(180deg,#0b1f4d 0%, #081636 100%);
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .app{max-width:560px;margin:0 auto;padding:0 14px 96px;position:relative}
+
+  /* ---------- generic ---------- */
+  button{font-family:inherit;cursor:pointer;border:none}
+  .btn{
+    background:linear-gradient(180deg,var(--uk-red),#a50f22);
+    color:#fff;border-radius:14px;padding:14px 18px;font-size:16px;font-weight:800;
+    box-shadow:var(--shadow);width:100%;letter-spacing:.2px;
+    transition:transform .08s ease, filter .15s ease;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.alt{background:linear-gradient(180deg,var(--uk-blue2),#0c2156)}
+  .btn.gold{background:linear-gradient(180deg,#ffd980,#f2b500);color:#3a2a00}
+  .btn.ghost{background:rgba(255,255,255,.08);box-shadow:none}
+  .btn.small{padding:9px 12px;font-size:13px;width:auto;border-radius:11px}
+  .card{background:linear-gradient(180deg,var(--card),var(--card2));border-radius:var(--r);
+    padding:16px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.06);}
+  .muted{color:var(--muted)}
+  .center{text-align:center}
+  .row{display:flex;align-items:center;gap:10px}
+  .sv{color:var(--gold);font-size:13px;display:flex;gap:6px;align-items:flex-start;line-height:1.35}
+  .sv .flag{flex:none}
+  .hide{display:none !important}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.10);
+    border-radius:999px;padding:6px 11px;font-size:13px;font-weight:700}
+
+  /* ---------- screens ---------- */
+  .screen{animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- lock / player select ---------- */
+  .brand{text-align:center;padding:30px 0 12px}
+  .brand .plane{font-size:46px;display:block;animation:fly 4s ease-in-out infinite}
+  @keyframes fly{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
+  .brand h1{margin:6px 0 2px;font-size:26px;letter-spacing:.3px}
+  .stripe{height:6px;border-radius:6px;background:
+     linear-gradient(90deg,var(--uk-blue2) 0 33%,var(--uk-white) 33% 66%,var(--uk-red) 66% 100%);
+     margin:10px auto 0;max-width:200px}
+  .players{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+  .playercard{position:relative;cursor:pointer;text-align:center;padding:22px 12px}
+  .playercard .av{font-size:54px}
+  .playercard .nm{font-weight:800;font-size:18px;margin-top:6px}
+  .playercard .lv{font-size:12px;color:var(--muted)}
+  .playercard:active{transform:scale(.97)}
+
+  /* ---------- header bar ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 2px 6px;position:sticky;top:0;z-index:30;
+    background:linear-gradient(180deg,#0b1f4d 70%, rgba(11,31,77,0));}
+  .topbar .who{display:flex;align-items:center;gap:8px;font-weight:800}
+  .topbar .av{font-size:26px}
+  .switch{font-size:12px;background:rgba(255,255,255,.1);padding:7px 10px;border-radius:10px;color:#fff;font-weight:700}
+
+  .statgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:6px}
+  .stat{background:rgba(255,255,255,.06);border-radius:14px;padding:12px 8px;text-align:center}
+  .stat .v{font-size:22px;font-weight:900;line-height:1}
+  .stat .l{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+
+  /* rank + xp */
+  .rankwrap{margin-top:14px}
+  .rankrow{display:flex;justify-content:space-between;align-items:baseline}
+  .rankname{font-weight:900;font-size:18px}
+  .xpbar{height:14px;background:rgba(255,255,255,.12);border-radius:999px;margin-top:8px;overflow:hidden}
+  .xpfill{height:100%;background:linear-gradient(90deg,var(--gold),#ffb43d);border-radius:999px;width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+
+  /* countdown */
+  .countdown{display:flex;justify-content:space-around;text-align:center;margin-top:12px}
+  .countdown .v{font-size:26px;font-weight:900}
+  .countdown .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+
+  /* journey */
+  h2.sec{font-size:15px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:22px 4px 10px}
+  .journey{position:relative;padding-left:30px}
+  .journey::before{content:"";position:absolute;left:13px;top:6px;bottom:6px;width:4px;border-radius:4px;
+    background:linear-gradient(180deg,var(--gold),rgba(255,255,255,.15));}
+  .stop{position:relative;margin-bottom:14px}
+  .stop .dot{position:absolute;left:-30px;top:0;width:30px;height:30px;border-radius:50%;
+    background:var(--card2);border:3px solid rgba(255,255,255,.2);display:grid;place-items:center;font-size:15px}
+  .stop.done .dot{background:var(--green);border-color:#bff5d6}
+  .stop.current .dot{background:var(--gold);border-color:#fff;box-shadow:0 0 0 5px rgba(255,211,78,.25);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 5px rgba(255,211,78,.25)}50%{box-shadow:0 0 0 10px rgba(255,211,78,.05)}}
+  .stop .t{font-weight:800}
+  .stop .s{font-size:12px;color:var(--gold)}
+  .stop .need{font-size:11px;color:var(--muted)}
+  .stop.done .t{color:#bff5d6}
+
+  /* category chips */
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;background:rgba(255,255,255,.08);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:700;white-space:nowrap}
+  .chip.active{background:var(--uk-red);color:#fff}
+
+  /* challenge */
+  .ch{margin-bottom:12px;position:relative;overflow:hidden}
+  .ch .top{display:flex;gap:10px;align-items:flex-start}
+  .ch .ico{font-size:26px;flex:none}
+  .ch .en{font-weight:800;font-size:16px;line-height:1.25}
+  .ch .pts{flex:none;background:var(--gold);color:#3a2a00;border-radius:10px;padding:4px 9px;font-weight:900;font-size:13px}
+  .ch .meta{display:flex;gap:8px;align-items:center;margin-top:6px}
+  .tag{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:rgba(255,255,255,.07);padding:3px 7px;border-radius:6px}
+  .ch .svbox{margin-top:10px;background:rgba(255,255,255,.05);border-radius:10px;padding:9px 11px;display:none}
+  .ch .svbox.show{display:block}
+  .ch .actions{display:flex;gap:8px;margin-top:12px}
+  .ch.done{opacity:.55}
+  .ch.done .done-badge{position:absolute;top:10px;right:10px;background:var(--green);color:#06301a;font-weight:900;
+    font-size:12px;padding:4px 9px;border-radius:8px}
+
+  /* badges */
+  .badgegrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .badge{background:rgba(255,255,255,.06);border-radius:14px;padding:14px 8px;text-align:center}
+  .badge .b{font-size:34px;filter:grayscale(1) opacity(.4)}
+  .badge.unlocked .b{filter:none}
+  .badge .nm{font-size:11px;font-weight:800;margin-top:6px}
+  .badge .ds{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3}
+  .badge.unlocked{box-shadow:0 0 0 2px var(--gold) inset}
+
+  /* bottom nav */
+  .nav{position:fixed;bottom:0;left:0;right:0;z-index:40;
+    background:linear-gradient(180deg,rgba(8,22,54,.6),#081636 40%);
+    backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,.08)}
+  .nav .inner{max-width:560px;margin:0 auto;display:flex;justify-content:space-around;padding:8px 6px 14px}
+  .nav button{background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:6px 10px;border-radius:12px}
+  .nav button .ic{font-size:22px}
+  .nav button.active{color:#fff}
+  .nav button.active .ic{transform:translateY(-2px)}
+
+  /* toast + confetti + modal */
+  .toast{position:fixed;left:50%;top:18%;transform:translateX(-50%) scale(.8);z-index:80;
+    background:var(--green);color:#06301a;font-weight:900;padding:14px 22px;border-radius:16px;box-shadow:var(--shadow);
+    opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.2,1.4,.4,1);text-align:center;max-width:90%}
+  .toast.show{opacity:1;transform:translateX(-50%) scale(1)}
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:70;overflow:hidden}
+  .conf{position:absolute;width:10px;height:14px;will-change:transform;border-radius:2px}
+
+  .overlay{position:fixed;inset:0;background:rgba(4,10,28,.72);z-index:90;display:none;align-items:center;justify-content:center;padding:18px}
+  .overlay.show{display:flex}
+  .modal{width:100%;max-width:420px;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  input,select{width:100%;padding:13px;border-radius:12px;border:1px solid rgba(255,255,255,.15);
+    background:rgba(255,255,255,.06);color:#fff;font-size:16px;margin-top:6px}
+  label{font-size:13px;font-weight:700;color:var(--muted);display:block;margin-top:12px}
+  .danger{color:#ff9aa6}
+  .fact{background:rgba(255,255,255,.05);border-left:3px solid var(--gold);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:14px}
+  .fact .sv{margin-top:5px}
+  a.link{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<!-- bottom nav -->
+<nav class="nav hide" id="nav">
+  <div class="inner">
+    <button data-tab="home" class="active"><span class="ic">🏠</span>Home</button>
+    <button data-tab="challenges"><span class="ic">🎯</span>Quests</button>
+    <button data-tab="badges"><span class="ic">🏅</span>Badges</button>
+    <button data-tab="parent"><span class="ic">🔒</span>Parents</button>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+<div class="confetti" id="confetti"></div>
+<div class="overlay" id="overlay"><div class="modal card" id="modalBody"></div></div>
+
+<script>
+/* =========================================================================
+   ROAD TO LONDON — Summer Challenge Game
+   Single-file app. All progress saved in localStorage on the device.
+   English game with Swedish hints. Parent password gates all resets.
+   ========================================================================= */
+
+const STORE_KEY = "roadToLondon_v1";
+const DEFAULT_PASSWORD = "london2026"; // parents can change this in the Parents tab
+const DEFAULT_TRIP = "2026-10-26";     // Höstlov 2026 = week 44 (editable)
+
+/* ---------- Default players (names editable in Parents tab) ---------- */
+const DEFAULT_PLAYERS = {
+  p1: { name: "Player 1", avatar: "🦁" },
+  p2: { name: "Player 2", avatar: "🦊" }
+};
+
+/* ---------- Categories ---------- */
+const CATS = {
+  reading:  { name:"Reading & Learning", icon:"📚" },
+  active:   { name:"Active & Outdoors",  icon:"🏃" },
+  home:     { name:"Helping at Home",    icon:"🏠" },
+  creative: { name:"Creative",           icon:"🎨" },
+  kind:     { name:"Kindness",           icon:"💛" },
+  english:  { name:"English & London",   icon:"🇬🇧" }
+};
+
+/* ---------- Challenges ----------
+   type: "daily"  -> can be done once per day (resets every morning)
+         "weekly" -> can be done once per week
+         "once"   -> one big challenge, done a single time ever
+   en = English text (the game), sv = Swedish hint/help
+*/
+const CHALLENGES = [
+  // READING & LEARNING
+  {id:"r1", cat:"reading", type:"daily",  stars:15, icon:"📖", en:"Read in English for 15 minutes", sv:"Läs på engelska i 15 minuter. Det räcker med en bok, serietidning eller app."},
+  {id:"r2", cat:"reading", type:"daily",  stars:15, icon:"📕", en:"Read a book in Swedish for 20 minutes", sv:"Läs en bok på svenska i 20 minuter."},
+  {id:"r3", cat:"reading", type:"daily",  stars:10, icon:"✍️", en:"Learn 5 new English words and write them down", sv:"Lär dig 5 nya engelska ord och skriv ner dem med översättning."},
+  {id:"r4", cat:"reading", type:"weekly", stars:40, icon:"🎬", en:"Watch a film in English with English subtitles", sv:"Se en film på engelska MED engelsk text (inte svensk)."},
+  {id:"r5", cat:"reading", type:"daily",  stars:10, icon:"🧮", en:"Practise maths for 10 minutes", sv:"Träna matte i 10 minuter, t.ex. gångertabellen eller huvudräkning."},
+
+  // ACTIVE & OUTDOORS
+  {id:"a1", cat:"active", type:"daily",  stars:15, icon:"🚴", en:"Play outside or ride your bike for 30 minutes", sv:"Lek ute eller cykla i 30 minuter."},
+  {id:"a2", cat:"active", type:"daily",  stars:10, icon:"🤸", en:"Do 20 jumping jacks and 10 push-ups", sv:"Gör 20 sprattelgubbar (jumping jacks) och 10 armhävningar."},
+  {id:"a3", cat:"active", type:"daily",  stars:20, icon:"🏊", en:"Go swimming or to the lake", sv:"Bada, simma eller åk till sjön/havet."},
+  {id:"a4", cat:"active", type:"weekly", stars:35, icon:"🥾", en:"Go on a walk or hike in nature", sv:"Gå en promenad eller vandra i naturen."},
+  {id:"a5", cat:"active", type:"daily",  stars:10, icon:"⚽", en:"Play a sport or ball game", sv:"Spela en sport eller ett bollspel."},
+
+  // HELPING AT HOME
+  {id:"h1", cat:"home", type:"daily",  stars:10, icon:"🛏️", en:"Make your bed and tidy your room", sv:"Bädda din säng och städa ditt rum."},
+  {id:"h2", cat:"home", type:"daily",  stars:10, icon:"🍽️", en:"Help set or clear the table", sv:"Hjälp till att duka eller plocka undan bordet."},
+  {id:"h3", cat:"home", type:"daily",  stars:15, icon:"🧹", en:"Do a chore without being asked", sv:"Gör en syssla UTAN att någon ber dig. Du bestämmer vilken!"},
+  {id:"h4", cat:"home", type:"daily",  stars:15, icon:"🥗", en:"Help cook a meal", sv:"Hjälp till att laga en måltid."},
+  {id:"h5", cat:"home", type:"weekly", stars:30, icon:"🌱", en:"Water the plants or help in the garden", sv:"Vattna blommorna eller hjälp till i trädgården."},
+
+  // CREATIVE
+  {id:"c1", cat:"creative", type:"daily",  stars:15, icon:"🎨", en:"Draw or paint something", sv:"Rita eller måla något."},
+  {id:"c2", cat:"creative", type:"daily",  stars:15, icon:"🎵", en:"Practise an instrument or learn a song", sv:"Öva på ett instrument eller lär dig en sång."},
+  {id:"c3", cat:"creative", type:"weekly", stars:40, icon:"📔", en:"Write a short story or a diary page in English", sv:"Skriv en kort berättelse eller en dagbokssida på engelska."},
+  {id:"c4", cat:"creative", type:"daily",  stars:15, icon:"🧱", en:"Build or make something (Lego, craft, cardboard…)", sv:"Bygg eller skapa något (Lego, pyssel, kartong…)."},
+
+  // KINDNESS
+  {id:"k1", cat:"kind", type:"daily",  stars:15, icon:"🤝", en:"Do something kind for someone in the family", sv:"Gör något snällt för någon i familjen."},
+  {id:"k2", cat:"kind", type:"daily",  stars:10, icon:"😊", en:"Give 3 honest compliments today", sv:"Ge 3 ärliga komplimanger idag."},
+  {id:"k3", cat:"kind", type:"weekly", stars:30, icon:"🧸", en:"Help your sibling with something", sv:"Hjälp ditt syskon med något."},
+  {id:"k4", cat:"kind", type:"daily",  stars:10, icon:"📵", en:"No screen-fighting today — share nicely", sv:"Inga skärm-bråk idag — dela schyst med varandra."},
+
+  // ENGLISH & LONDON (extra English practice, London-themed)
+  {id:"e1", cat:"english", type:"daily",  stars:15, icon:"🗣️", en:"Speak only English at dinner for 10 minutes", sv:"Prata bara engelska vid middagen i 10 minuter."},
+  {id:"e2", cat:"english", type:"weekly", stars:35, icon:"🇬🇧", en:"Learn one fact about London and tell the family", sv:"Lär dig ett fakta om London och berätta för familjen."},
+  {id:"e3", cat:"english", type:"daily",  stars:15, icon:"🎧", en:"Listen to an English song and find one new word", sv:"Lyssna på en engelsk låt och hitta ett nytt ord du inte kunde."},
+  {id:"e4", cat:"english", type:"weekly", stars:40, icon:"🛒", en:"Order or ask for something in English (shop/café)", sv:"Beställ eller fråga om något på engelska (i en affär eller på ett café)."},
+  {id:"e5", cat:"english", type:"daily",  stars:10, icon:"📝", en:"Write 3 sentences in English about your day", sv:"Skriv 3 meningar på engelska om din dag."},
+
+  // ONE-TIME BIG QUESTS (worth a lot, real bonding goals)
+  {id:"o1", cat:"english",  type:"once", stars:80,  icon:"🗺️", en:"Help plan one thing we'll do in London", sv:"Hjälp till att planera EN sak vi ska göra i London. Sök upp den på en karta."},
+  {id:"o2", cat:"reading",  type:"once", stars:100, icon:"📚", en:"Finish reading a whole book this summer", sv:"Läs ut en HEL bok under sommaren."},
+  {id:"o3", cat:"english",  type:"once", stars:90,  icon:"💷", en:"Learn about British money (pounds & pence)", sv:"Lär dig om brittiska pengar (pund och pence) och räkna lite växel."},
+  {id:"o4", cat:"creative", type:"once", stars:70,  icon:"📷", en:"Make a 'London wish list' poster", sv:"Gör en affisch med en 'London-önskelista' — saker du vill se och göra."},
+  {id:"o5", cat:"active",   type:"once", stars:90,  icon:"🚇", en:"Learn how the London Underground (the Tube) works", sv:"Lär dig hur Londons tunnelbana ('the Tube') fungerar — kolla en linjekarta."}
+];
+
+/* ---------- Journey milestones (stars needed) ---------- */
+const JOURNEY = [
+  {at:0,    icon:"🏡", en:"Home in Sweden",        sv:"Hemma i Sverige"},
+  {at:100,  icon:"🧳", en:"Bags are packed",       sv:"Väskorna är packade"},
+  {at:250,  icon:"🚗", en:"Off to the airport",    sv:"Iväg till flygplatsen"},
+  {at:450,  icon:"🎫", en:"Boarding the plane",    sv:"Går ombord på planet"},
+  {at:700,  icon:"🛫", en:"Take off!",             sv:"Lyft!"},
+  {at:1000, icon:"☁️", en:"Flying over the sea",   sv:"Flyger över havet"},
+  {at:1350, icon:"🛬", en:"Landing in London",     sv:"Landar i London"},
+  {at:1750, icon:"🕰️", en:"Big Ben",               sv:"Big Ben — det berömda klocktornet"},
+  {at:2200, icon:"🎡", en:"The London Eye",        sv:"London Eye — det stora pariserhjulet"},
+  {at:2700, icon:"🌉", en:"Tower Bridge",          sv:"Tower Bridge — den berömda bron"},
+  {at:3300, icon:"🏰", en:"Buckingham Palace",     sv:"Buckingham Palace — drottningens/kungens slott"},
+  {at:4000, icon:"👑", en:"London Legend!",        sv:"London-legend! Du klarade hela resan!"}
+];
+
+/* ---------- Ranks (by level) ---------- */
+const RANKS = ["Rookie Traveller","Junior Explorer","City Scout","Map Master","Globe Trotter","London Pro","Royal Adventurer","London Legend"];
+const STARS_PER_LEVEL = 150;
+
+/* ---------- Badges ---------- */
+const BADGES = [
+  {id:"first", icon:"⭐", nm:"First Steps", ds:"Finish your first quest", test:s=>s.totalDone>=1},
+  {id:"streak3", icon:"🔥", nm:"On Fire", ds:"3-day streak", test:s=>s.bestStreak>=3},
+  {id:"streak7", icon:"🚀", nm:"Week Warrior", ds:"7-day streak", test:s=>s.bestStreak>=7},
+  {id:"streak14", icon:"💎", nm:"Unstoppable", ds:"14-day streak", test:s=>s.bestStreak>=14},
+  {id:"book", icon:"📚", nm:"Bookworm", ds:"10 reading quests", test:s=>(s.catCount.reading||0)>=10},
+  {id:"sport", icon:"🏆", nm:"Athlete", ds:"10 active quests", test:s=>(s.catCount.active||0)>=10},
+  {id:"help", icon:"🦸", nm:"Super Helper", ds:"10 home quests", test:s=>(s.catCount.home||0)>=10},
+  {id:"art", icon:"🎨", nm:"Artist", ds:"8 creative quests", test:s=>(s.catCount.creative||0)>=8},
+  {id:"kind", icon:"💛", nm:"Kind Heart", ds:"10 kindness quests", test:s=>(s.catCount.kind||0)>=10},
+  {id:"eng", icon:"🇬🇧", nm:"English Star", ds:"12 English quests", test:s=>(s.catCount.english||0)>=12},
+  {id:"s500", icon:"🌟", nm:"500 Club", ds:"Earn 500 stars", test:s=>s.stars>=500},
+  {id:"land", icon:"🛬", nm:"London Bound", ds:"Reach London", test:s=>s.stars>=1350},
+  {id:"king", icon:"👑", nm:"London Legend", ds:"Finish the journey", test:s=>s.stars>=4000}
+];
+
+/* ---------- London facts (unlocked as you travel) ---------- */
+const FACTS = [
+  {en:"Big Ben is actually the name of the giant bell, not the tower!", sv:"Big Ben är faktiskt namnet på den jättestora klockan, inte tornet!"},
+  {en:"The London Eye is 135 metres tall — one of the biggest wheels in the world.", sv:"London Eye är 135 meter högt — ett av världens största pariserhjul."},
+  {en:"Red double-decker buses are a famous symbol of London.", sv:"Röda dubbeldäckarbussar är en känd symbol för London."},
+  {en:"London has over 8 million people living in it.", sv:"London har över 8 miljoner invånare."},
+  {en:"The Tube (Underground) is the oldest underground railway in the world.", sv:"Tunnelbanan ('the Tube') är världens äldsta tunnelbana."},
+  {en:"You drive on the LEFT side of the road in Britain.", sv:"I Storbritannien kör man på VÄNSTER sida av vägen."},
+  {en:"British money is the pound (£). 100 pence make 1 pound.", sv:"Brittiska pengar är pund (£). 100 pence blir 1 pund."}
+];
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function weekStr(){
+  const d=new Date(); const oneJan=new Date(d.getFullYear(),0,1);
+  const week=Math.ceil((((d-oneJan)/86400000)+oneJan.getDay()+1)/7);
+  return d.getFullYear()+"-W"+week;
+}
+
+function freshPlayer(meta){
+  return {
+    name: meta.name, avatar: meta.avatar,
+    stars: 0,
+    totalDone: 0,
+    catCount: {},
+    done: {},          // key -> true  (key = id + period stamp)
+    streak: 0,
+    bestStreak: 0,
+    lastActive: null,
+    badges: []
+  };
+}
+
+function defaultState(){
+  return {
+    password: DEFAULT_PASSWORD,
+    tripDate: DEFAULT_TRIP,
+    soundOn: true,
+    players: {
+      p1: freshPlayer(DEFAULT_PLAYERS.p1),
+      p2: freshPlayer(DEFAULT_PLAYERS.p2)
+    }
+  };
+}
+
+let state = load();
+let current = null;     // current player id
+let activeTab = "home";
+let activeCat = "all";
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultState();
+    const s = JSON.parse(raw);
+    // light migration safety
+    if(!s.players) return defaultState();
+    if(!s.tripDate) s.tripDate = DEFAULT_TRIP;
+    if(s.soundOn===undefined) s.soundOn = true;
+    return s;
+  }catch(e){ return defaultState(); }
+}
+function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+/* =========================================================================
+   HELPERS
+   ========================================================================= */
+function periodKey(ch){
+  if(ch.type==="daily")  return ch.id+"|"+todayStr();
+  if(ch.type==="weekly") return ch.id+"|"+weekStr();
+  return ch.id+"|once";
+}
+function isDone(p, ch){ return !!p.done[periodKey(ch)]; }
+
+function levelOf(p){ return Math.floor(p.stars / STARS_PER_LEVEL) + 1; }
+function rankOf(p){ const i=Math.min(levelOf(p)-1, RANKS.length-1); return RANKS[i]; }
+function xpInLevel(p){ return p.stars % STARS_PER_LEVEL; }
+
+function journeyIndex(stars){
+  let idx=0;
+  for(let i=0;i<JOURNEY.length;i++){ if(stars>=JOURNEY[i].at) idx=i; }
+  return idx;
+}
+
+function daysToTrip(){
+  const t=new Date(state.tripDate+"T00:00:00");
+  const now=new Date(); now.setHours(0,0,0,0);
+  return Math.max(0, Math.round((t-now)/86400000));
+}
+
+function el(html){ const d=document.createElement("div"); d.innerHTML=html.trim(); return d.firstChild; }
+function esc(s){ return (s+"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* =========================================================================
+   RENDER — lock / player select
+   ========================================================================= */
+function renderSelect(){
+  document.getElementById("nav").classList.add("hide");
+  const app=document.getElementById("app");
+  const p1=state.players.p1, p2=state.players.p2;
+  const combined = p1.stars + p2.stars;
+  app.innerHTML = `
+   <div class="screen">
+    <div class="brand">
+      <span class="plane">✈️</span>
+      <h1>Road to London</h1>
+      <div class="muted">Summer Challenge · Sommarutmaning</div>
+      <div class="stripe"></div>
+    </div>
+    <div class="card center">
+      <div class="muted" style="font-size:13px">🇸🇪 ➜ 🇬🇧 Family adventure to London</div>
+      <div style="font-size:13px;margin-top:8px">Trip in <b class="gold-text" style="color:var(--gold)">${daysToTrip()} days</b> · Family total ⭐ <b>${combined}</b></div>
+    </div>
+    <h2 class="sec">Who's playing?</h2>
+    <div class="players">
+      ${playerCard("p1",p1)}
+      ${playerCard("p2",p2)}
+    </div>
+    <p class="center muted" style="font-size:12px;margin-top:24px">
+      Tip: add this page to your home screen for a full-screen app.<br>
+      <span style="color:var(--gold)">🇸🇪 Tips: spara sidan på hemskärmen så blir det som en riktig app.</span>
+    </p>
+   </div>`;
+  app.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{ current=b.dataset.pick; activeTab="home"; render(); });
+}
+function playerCard(id,p){
+  return `<div class="card playercard" data-pick="${id}">
+     <div class="av">${p.avatar}</div>
+     <div class="nm">${esc(p.name)}</div>
+     <div class="lv">Lvl ${levelOf(p)} · ⭐ ${p.stars}</div>
+   </div>`;
+}
+
+/* =========================================================================
+   RENDER — main app
+   ========================================================================= */
+function render(){
+  if(!current){ renderSelect(); return; }
+  document.getElementById("nav").classList.remove("hide");
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===activeTab));
+  const app=document.getElementById("app");
+  if(activeTab==="home") app.innerHTML = viewHome();
+  else if(activeTab==="challenges") app.innerHTML = viewChallenges();
+  else if(activeTab==="badges") app.innerHTML = viewBadges();
+  else if(activeTab==="parent") app.innerHTML = viewParent();
+  wire();
+}
+
+function topbar(){
+  const p=state.players[current];
+  return `<div class="topbar">
+     <div class="who"><span class="av">${p.avatar}</span><span>${esc(p.name)}</span></div>
+     <button class="switch" id="switchBtn">↺ Switch player</button>
+   </div>`;
+}
+
+function viewHome(){
+  const p=state.players[current];
+  const lvl=levelOf(p), xp=xpInLevel(p), pct=Math.round(xp/STARS_PER_LEVEL*100);
+  const jIdx=journeyIndex(p.stars);
+  const next=JOURNEY[jIdx+1];
+  const dleft=daysToTrip();
+  // today's done count
+  const today=todayStr();
+  const doneToday=Object.keys(p.done).filter(k=>k.endsWith("|"+today)).length;
+
+  // facts unlocked = number of journey stops reached beyond start, capped
+  const factsUnlocked=Math.min(jIdx, FACTS.length);
+
+  return `<div class="screen">
+    ${topbar()}
+
+    <div class="card">
+      <div class="rankrow">
+        <div><div class="muted" style="font-size:12px">LEVEL ${lvl}</div><div class="rankname">${rankOf(p)}</div></div>
+        <div class="pill">⭐ ${p.stars}</div>
+      </div>
+      <div class="xpbar"><div class="xpfill" style="width:${pct}%"></div></div>
+      <div class="muted" style="font-size:12px;margin-top:6px">${xp} / ${STARS_PER_LEVEL} stars to next level</div>
+    </div>
+
+    <div class="statgrid">
+      <div class="stat"><div class="v">🔥 ${p.streak}</div><div class="l">Day streak</div></div>
+      <div class="stat"><div class="v">${doneToday}</div><div class="l">Done today</div></div>
+      <div class="stat"><div class="v">${p.totalDone}</div><div class="l">Total quests</div></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:800">🛫 Countdown to London</div>
+        <div class="muted" style="font-size:12px">${esc(state.tripDate)}</div>
+      </div>
+      <div class="countdown">
+        <div><div class="v">${dleft}</div><div class="l">Days</div></div>
+        <div><div class="v">${Math.ceil(dleft/7)}</div><div class="l">Weeks</div></div>
+        <div><div class="v">${(p.stars+state.players[other()].stars)}</div><div class="l">Family ⭐</div></div>
+      </div>
+    </div>
+
+    <h2 class="sec">Your journey to London</h2>
+    <div class="card">
+      ${next ? `<div class="center" style="margin-bottom:10px">Next stop: <b>${next.icon} ${next.en}</b> — <span class="muted">${next.at-p.stars} stars to go</span><div class="sv"><span class="flag">🇸🇪</span><span>${next.sv} — ${next.at-p.stars} stjärnor kvar</span></div></div>`
+        : `<div class="center" style="margin-bottom:10px">👑 <b>You finished the whole journey!</b><div class="sv"><span class="flag">🇸🇪</span><span>Du klarade hela resan! Otroligt jobbat!</span></div></div>`}
+      <div class="journey">
+        ${JOURNEY.map((s,i)=>{
+          const done=p.stars>=s.at, cur=(i===jIdx);
+          return `<div class="stop ${done?'done':''} ${cur?'current':''}">
+             <div class="dot">${done?s.icon:'🔒'}</div>
+             <div class="t">${s.icon} ${s.en}</div>
+             <div class="s">🇸🇪 ${s.sv}</div>
+             ${!done?`<div class="need">${s.at} stars</div>`:''}
+           </div>`;
+        }).join("")}
+      </div>
+    </div>
+
+    ${factsUnlocked>0 ? `<h2 class="sec">London facts you've unlocked</h2>
+    <div class="card">
+      ${FACTS.slice(0,factsUnlocked).map(f=>`<div class="fact">${f.en}<div class="sv"><span class="flag">🇸🇪</span><span>${f.sv}</span></div></div>`).join("")}
+      ${factsUnlocked<FACTS.length?`<div class="muted center" style="font-size:12px;margin-top:10px">🔒 Travel further to unlock more facts!</div>`:''}
+    </div>`:''}
+
+    <div style="margin-top:18px"><button class="btn" id="goQuests">🎯 Do today's quests</button></div>
+  </div>`;
+}
+
+function other(){ return current==="p1"?"p2":"p1"; }
+
+function viewChallenges(){
+  const p=state.players[current];
+  const cats=["all", ...Object.keys(CATS)];
+  const list = CHALLENGES.filter(c=> activeCat==="all" ? true : c.cat===activeCat);
+  // sort: available first, then done; within, daily/weekly/once
+  const order={daily:0,weekly:1,once:2};
+  list.sort((a,b)=>{
+    const da=isDone(p,a), db=isDone(p,b);
+    if(da!==db) return da?1:-1;
+    return order[a.type]-order[b.type];
+  });
+
+  return `<div class="screen">
+    ${topbar()}
+    <div class="card center" style="margin-bottom:6px">
+      <b>🎯 Quests</b>
+      <div class="muted" style="font-size:12px;margin-top:3px">Tap "Need help?" for a Swedish hint.</div>
+      <div class="sv center" style="justify-content:center"><span class="flag">🇸🇪</span><span>Tryck på "Need help?" för en svensk ledtråd.</span></div>
+    </div>
+    <div class="chips">
+      ${cats.map(c=>{
+        const label = c==="all" ? "✨ All" : `${CATS[c].icon} ${CATS[c].name}`;
+        return `<button class="chip ${activeCat===c?'active':''}" data-cat="${c}">${label}</button>`;
+      }).join("")}
+    </div>
+    ${list.map(c=>challengeCard(p,c)).join("")}
+  </div>`;
+}
+
+function challengeCard(p,c){
+  const done=isDone(p,c);
+  const typeLabel = c.type==="daily"?"Daily":c.type==="weekly"?"Weekly":"Big quest ⭐";
+  return `<div class="card ch ${done?'done':''}" data-ch="${c.id}">
+     ${done?'<div class="done-badge">✓ Done</div>':''}
+     <div class="top">
+       <div class="ico">${c.icon}</div>
+       <div style="flex:1">
+         <div class="en">${esc(c.en)}</div>
+         <div class="meta"><span class="tag">${CATS[c.cat].icon} ${CATS[c.cat].name}</span><span class="tag">${typeLabel}</span></div>
+       </div>
+       <div class="pts">+${c.stars}</div>
+     </div>
+     <div class="svbox" id="sv-${c.id}"><div class="sv"><span class="flag">🇸🇪</span><span>${esc(c.sv)}</span></div></div>
+     ${done?'':`<div class="actions">
+        <button class="btn small ghost" data-help="${c.id}">💡 Need help? (Hjälp)</button>
+        <button class="btn small" data-complete="${c.id}" style="flex:1">Complete ✓</button>
+     </div>`}
+   </div>`;
+}
+
+function viewBadges(){
+  const p=state.players[current];
+  const s=statSnapshot(p);
+  return `<div class="screen">
+    ${topbar()}
+    <div class="card center" style="margin-bottom:12px">
+      <b>🏅 Your Badges</b>
+      <div class="muted" style="font-size:13px;margin-top:4px">${p.badges.length} / ${BADGES.length} unlocked</div>
+      <div class="sv center" style="justify-content:center"><span class="flag">🇸🇪</span><span>Samla märken genom att klara utmaningar!</span></div>
+    </div>
+    <div class="badgegrid">
+      ${BADGES.map(b=>{
+        const got=p.badges.includes(b.id);
+        return `<div class="badge ${got?'unlocked':''}">
+           <div class="b">${got?b.icon:'🔒'}</div>
+           <div class="nm">${b.nm}</div>
+           <div class="ds">${b.ds}</div>
+         </div>`;
+      }).join("")}
+    </div>
+  </div>`;
+}
+
+function viewParent(){
+  return `<div class="screen">
+    ${topbar()}
+    <div class="card center">
+      <div style="font-size:40px">🔒</div>
+      <b>Parents' Zone</b>
+      <div class="muted" style="font-size:13px;margin:6px 0 12px">Password needed to change settings or reset progress.</div>
+      <div class="sv center" style="justify-content:center;margin-bottom:14px"><span class="flag">🇸🇪</span><span>Föräldrazon — lösenord krävs för att ändra eller nollställa.</span></div>
+      <button class="btn" id="unlockParent">Unlock with password</button>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   STAT SNAPSHOT for badge tests
+   ========================================================================= */
+function statSnapshot(p){
+  return { stars:p.stars, totalDone:p.totalDone, bestStreak:p.bestStreak, catCount:p.catCount };
+}
+
+/* =========================================================================
+   ACTIONS
+   ========================================================================= */
+function completeChallenge(id){
+  const p=state.players[current];
+  const c=CHALLENGES.find(x=>x.id===id);
+  if(!c || isDone(p,c)) return;
+
+  // streak handling
+  const today=todayStr();
+  if(p.lastActive!==today){
+    const yesterday=new Date(); yesterday.setDate(yesterday.getDate()-1);
+    const yStr=yesterday.getFullYear()+"-"+String(yesterday.getMonth()+1).padStart(2,"0")+"-"+String(yesterday.getDate()).padStart(2,"0");
+    p.streak = (p.lastActive===yStr) ? p.streak+1 : 1;
+    p.lastActive=today;
+  }
+  if(p.streak>p.bestStreak) p.bestStreak=p.streak;
+
+  // record
+  p.done[periodKey(c)] = true;
+  p.stars += c.stars;
+  p.totalDone += 1;
+  p.catCount[c.cat] = (p.catCount[c.cat]||0)+1;
+
+  // badges
+  const before=p.badges.length;
+  const snap=statSnapshot(p);
+  BADGES.forEach(b=>{ if(!p.badges.includes(b.id) && b.test(snap)) p.badges.push(b.id); });
+  const newBadges=p.badges.length-before;
+
+  save();
+  celebrate(c, newBadges);
+  // re-render current view after a beat so the toast is visible
+  render();
+}
+
+function celebrate(c, newBadges){
+  burstConfetti();
+  beep();
+  let msg = `+${c.stars} ⭐ Nice work!`;
+  if(newBadges>0) msg += `\n🏅 New badge unlocked!`;
+  showToast(msg);
+}
+
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.innerHTML = esc(msg).replace(/\n/g,"<br>");
+  t.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=>t.classList.remove("show"),1900);
+}
+
+function burstConfetti(){
+  const box=document.getElementById("confetti");
+  const colors=["#cf142b","#ffffff","#13327a","#ffd34e","#36c275"];
+  for(let i=0;i<70;i++){
+    const c=document.createElement("div");
+    c.className="conf";
+    const left=Math.random()*100;
+    c.style.left=left+"vw";
+    c.style.top="-20px";
+    c.style.background=colors[i%colors.length];
+    c.style.transform=`rotate(${Math.random()*360}deg)`;
+    box.appendChild(c);
+    const dur=1200+Math.random()*1200;
+    const drift=(Math.random()-0.5)*180;
+    c.animate([
+      {transform:`translate(0,0) rotate(0deg)`,opacity:1},
+      {transform:`translate(${drift}px, ${window.innerHeight+60}px) rotate(${720+Math.random()*360}deg)`,opacity:1}
+    ],{duration:dur,easing:"cubic-bezier(.3,.6,.5,1)"});
+    setTimeout(()=>c.remove(),dur);
+  }
+}
+
+let audioCtx=null;
+function beep(){
+  if(!state.soundOn) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const notes=[523.25,659.25,783.99]; // C5 E5 G5
+    notes.forEach((f,i)=>{
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type="triangle"; o.frequency.value=f;
+      o.connect(g); g.connect(audioCtx.destination);
+      const t=audioCtx.currentTime+i*0.09;
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.18,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
+      o.start(t); o.stop(t+0.2);
+    });
+  }catch(e){}
+}
+
+/* =========================================================================
+   PARENT MODAL
+   ========================================================================= */
+function openModal(html){
+  document.getElementById("modalBody").innerHTML=html;
+  document.getElementById("overlay").classList.add("show");
+}
+function closeModal(){ document.getElementById("overlay").classList.remove("show"); }
+
+function parentPasswordPrompt(){
+  openModal(`
+    <h3 style="margin:0 0 6px">🔒 Enter password</h3>
+    <div class="sv" style="margin-bottom:8px"><span class="flag">🇸🇪</span><span>Skriv föräldralösenordet.</span></div>
+    <input id="pwInput" type="password" placeholder="Password" autocomplete="off" inputmode="text">
+    <div id="pwErr" class="danger" style="font-size:13px;margin-top:8px"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn ghost" id="pwCancel">Cancel</button>
+      <button class="btn" id="pwOk">Unlock</button>
+    </div>
+  `);
+  const input=document.getElementById("pwInput"); input.focus();
+  document.getElementById("pwCancel").onclick=closeModal;
+  const submit=()=>{
+    if(input.value===state.password){ closeModal(); parentDashboard(); }
+    else { document.getElementById("pwErr").textContent="Wrong password. (Fel lösenord.)"; input.value=""; input.focus(); }
+  };
+  document.getElementById("pwOk").onclick=submit;
+  input.onkeydown=e=>{ if(e.key==="Enter") submit(); };
+}
+
+function parentDashboard(){
+  const p1=state.players.p1, p2=state.players.p2;
+  openModal(`
+    <h3 style="margin:0 0 4px">🔧 Parents' Zone</h3>
+    <div class="muted" style="font-size:12px;margin-bottom:10px">Manage the game. Changes save instantly.</div>
+
+    <label>Trip date (countdown target)</label>
+    <input id="tripDate" type="date" value="${esc(state.tripDate)}">
+
+    <label>Sound effects</label>
+    <select id="soundSel">
+      <option value="on" ${state.soundOn?'selected':''}>On</option>
+      <option value="off" ${!state.soundOn?'selected':''}>Off</option>
+    </select>
+
+    <label>Player 1 name &nbsp; <span class="muted">(emoji avatar)</span></label>
+    <div class="row"><input id="n1" value="${esc(p1.name)}" style="flex:1"><input id="av1" value="${esc(p1.avatar)}" style="width:64px;text-align:center"></div>
+
+    <label>Player 2 name</label>
+    <div class="row"><input id="n2" value="${esc(p2.name)}" style="flex:1"><input id="av2" value="${esc(p2.avatar)}" style="width:64px;text-align:center"></div>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" id="saveSettings">💾 Save settings</button>
+    </div>
+
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,.12);margin:18px 0">
+    <div style="font-weight:800;margin-bottom:8px">Stats</div>
+    <div class="muted" style="font-size:13px;line-height:1.6">
+      ${esc(p1.name)}: ⭐ ${p1.stars} · Lvl ${levelOf(p1)} · ${p1.totalDone} quests · 🔥 best ${p1.bestStreak}<br>
+      ${esc(p2.name)}: ⭐ ${p2.stars} · Lvl ${levelOf(p2)} · ${p2.totalDone} quests · 🔥 best ${p2.bestStreak}
+    </div>
+
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,.12);margin:18px 0">
+    <label>Change password</label>
+    <input id="newPw" type="text" placeholder="New password (leave empty to keep)">
+    <button class="btn alt" id="savePw" style="margin-top:10px">Update password</button>
+
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,.12);margin:18px 0">
+    <div style="font-weight:800;margin-bottom:8px" class="danger">⚠️ Reset progress</div>
+    <div class="muted" style="font-size:12px;margin-bottom:10px">This cannot be undone. (Detta går inte att ångra.)</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn ghost" id="reset1">Reset ${esc(p1.name)}'s progress</button>
+      <button class="btn ghost" id="reset2">Reset ${esc(p2.name)}'s progress</button>
+      <button class="btn" id="resetAll" style="background:linear-gradient(180deg,#7a0d1c,#530912)">Reset EVERYTHING</button>
+    </div>
+
+    <button class="btn ghost" id="closeModal" style="margin-top:16px">Close</button>
+  `);
+
+  document.getElementById("closeModal").onclick=()=>{ closeModal(); render(); };
+
+  document.getElementById("saveSettings").onclick=()=>{
+    state.tripDate=document.getElementById("tripDate").value||DEFAULT_TRIP;
+    state.soundOn=document.getElementById("soundSel").value==="on";
+    state.players.p1.name=document.getElementById("n1").value.trim()||"Player 1";
+    state.players.p2.name=document.getElementById("n2").value.trim()||"Player 2";
+    state.players.p1.avatar=document.getElementById("av1").value.trim()||"🦁";
+    state.players.p2.avatar=document.getElementById("av2").value.trim()||"🦊";
+    save(); showToast("Saved ✓"); parentDashboard();
+  };
+
+  document.getElementById("savePw").onclick=()=>{
+    const v=document.getElementById("newPw").value.trim();
+    if(v){ state.password=v; save(); showToast("Password updated ✓"); }
+    parentDashboard();
+  };
+
+  document.getElementById("reset1").onclick=()=>confirmReset("p1");
+  document.getElementById("reset2").onclick=()=>confirmReset("p2");
+  document.getElementById("resetAll").onclick=()=>confirmReset("all");
+}
+
+function confirmReset(target){
+  const name = target==="all" ? "EVERYTHING (both players)" : `${state.players[target].name}'s progress`;
+  openModal(`
+    <h3 style="margin:0 0 6px" class="danger">⚠️ Are you sure?</h3>
+    <p style="font-size:14px">This will permanently erase <b>${esc(name)}</b>.</p>
+    <div class="sv"><span class="flag">🇸🇪</span><span>Detta raderar allt för ${esc(name)}. Går inte att ångra.</span></div>
+    <label>Type the password again to confirm</label>
+    <input id="confPw" type="password" autocomplete="off">
+    <div id="confErr" class="danger" style="font-size:13px;margin-top:8px"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn ghost" id="confCancel">Cancel</button>
+      <button class="btn" id="confOk" style="background:linear-gradient(180deg,#7a0d1c,#530912)">Erase</button>
+    </div>
+  `);
+  document.getElementById("confCancel").onclick=parentDashboard;
+  document.getElementById("confOk").onclick=()=>{
+    if(document.getElementById("confPw").value!==state.password){
+      document.getElementById("confErr").textContent="Wrong password."; return;
+    }
+    if(target==="all"){
+      state.players.p1=freshPlayer({name:state.players.p1.name,avatar:state.players.p1.avatar});
+      state.players.p2=freshPlayer({name:state.players.p2.name,avatar:state.players.p2.avatar});
+    }else{
+      state.players[target]=freshPlayer({name:state.players[target].name,avatar:state.players[target].avatar});
+    }
+    save(); closeModal(); showToast("Progress reset ✓"); render();
+  };
+}
+
+/* =========================================================================
+   WIRE UP EVENTS (after each render)
+   ========================================================================= */
+function wire(){
+  const sw=document.getElementById("switchBtn");
+  if(sw) sw.onclick=()=>{ current=null; render(); };
+
+  const gq=document.getElementById("goQuests");
+  if(gq) gq.onclick=()=>{ activeTab="challenges"; render(); };
+
+  document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{ activeCat=b.dataset.cat; render(); });
+
+  document.querySelectorAll("[data-help]").forEach(b=>b.onclick=()=>{
+    const box=document.getElementById("sv-"+b.dataset.help);
+    if(box) box.classList.toggle("show");
+  });
+
+  document.querySelectorAll("[data-complete]").forEach(b=>b.onclick=()=>completeChallenge(b.dataset.complete));
+
+  const up=document.getElementById("unlockParent");
+  if(up) up.onclick=parentPasswordPrompt;
+}
+
+/* bottom nav */
+document.querySelectorAll(".nav button").forEach(b=>{
+  b.onclick=()=>{ if(!current) return; activeTab=b.dataset.tab; activeCat="all"; render(); };
+});
+/* tap outside modal to close (except hard confirms keep simple) */
+document.getElementById("overlay").addEventListener("click",e=>{
+  if(e.target.id==="overlay") closeModal();
+});
+
+/* =========================================================================
+   GO
+   ========================================================================= */
+renderSelect();
+</script>
+</body>
+</html>

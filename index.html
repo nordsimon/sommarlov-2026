@@ -1017,7 +1017,8 @@ function parentDashboard(){
     <div style="font-weight:800;margin-bottom:8px" class="danger">Reset</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <button class="btn outline" id="clearSync">Clear synced sibling data</button>
-      <button class="btn" id="resetMe" style="background:var(--red)">Reset ${esc(m.name)}'s progress</button>
+      <button class="btn outline" id="resetMe" style="color:var(--red);border-color:var(--red)">Reset ${esc(m.name)}'s progress</button>
+      <button class="btn" id="resetAll" style="background:var(--red)">Reset entire game (start over)</button>
     </div>
 
     <div class="muted center" style="font-size:11px;margin-top:14px">Road to London · v${APP_VERSION}</div>
@@ -1041,6 +1042,7 @@ function parentDashboard(){
   };
   document.getElementById("clearSync").onclick=()=>{ state.partner=null; save(); showToast("Sync cleared"); parentDashboard(); };
   document.getElementById("resetMe").onclick=confirmResetMe;
+  document.getElementById("resetAll").onclick=confirmFullReset;
   document.getElementById("openGallery").onclick=openGallery;
   document.getElementById("previewBtn").onclick=()=>{ previewAll=!previewAll; closeModal(); activeTab="home"; showToast(previewAll?"Preview on — all stops unlocked":"Preview off"); render(); };
   document.getElementById("updateBtn2").onclick=updateApp;
@@ -1136,6 +1138,28 @@ function confirmResetMe(){
     if(document.getElementById("confPw").value!==state.password){ document.getElementById("confErr").textContent="Wrong password."; return; }
     state.me=freshMe(state.me.name, state.me.avatar, state.me.id);
     save(); closeModal(); showToast("Progress reset ✓"); render();
+  };
+}
+
+/* Full reset: wipe everything and start over from the setup screen. */
+function confirmFullReset(){
+  openModal(`
+    <h3 style="margin:0 0 6px" class="danger">⚠️ Reset the entire game?</h3>
+    <p style="font-size:14px">This erases <b>everything</b> on this phone — profile, all points, completed quests, proof photos, synced sibling and settings — and starts over from the very beginning.</p>
+    ${sv("Detta raderar ALLT på denna telefon och börjar om från början. Går inte att ångra.")}
+    <label>Type the parents password to confirm</label>
+    <input id="fullPw" type="password" autocomplete="off">
+    <div id="fullErr" class="danger" style="font-size:13px;margin-top:8px"></div>
+    <div class="row" style="gap:8px;margin-top:14px">
+      <button class="btn ghost" id="fullCancel" style="flex:1">Cancel</button>
+      <button class="btn" id="fullOk" style="flex:1;background:var(--red)">Erase everything</button>
+    </div>`);
+  document.getElementById("fullCancel").onclick=parentDashboard;
+  document.getElementById("fullOk").onclick=()=>{
+    if(document.getElementById("fullPw").value!==state.password){ document.getElementById("fullErr").textContent="Wrong password."; return; }
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    state=defaultState(); unlocked=false; previewAll=false; activeTab="home"; activeCat="all"; setupAvatar=null;
+    closeModal(); showToast("Game reset"); render();
   };
 }
 

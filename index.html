@@ -10,7 +10,7 @@
      version from the network (even after "Add to Home Screen"). These hints
      discourage stale caching of the page itself. -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
-<title>Road to London 🇬🇧 — Summer Challenge</title>
+<title>Nord Challenges 🇬🇧</title>
 <style>
   :root{
     --bg:#f3f6fc;
@@ -111,12 +111,13 @@
   .xpfill{height:100%;background:linear-gradient(90deg,var(--amber),#f6c061);border-radius:999px;width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
 
   /* team */
-  .team{display:flex;gap:10px;margin-top:12px}
-  .mate{flex:1;background:var(--bg2);border-radius:14px;padding:12px;text-align:center}
+  .team{display:flex;gap:10px;margin-top:14px;align-items:stretch}
+  .mate{flex:1;background:var(--bg2);border-radius:14px;padding:14px 10px;text-align:center;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:96px}
   .mate .av{font-size:30px}
-  .mate .nm{font-weight:800;margin-top:4px}
+  .mate .nm{font-weight:800}
   .mate .st{font-size:13px;color:var(--muted)}
-  .mate.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+  .mate.empty{color:var(--muted);font-size:13px}
 
   .countdown{display:flex;text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
   .countdown>div{flex:1}
@@ -139,6 +140,10 @@
   .stop .need{font-size:11px;color:var(--muted)}
   .stop:not(.done) .t{color:var(--muted)}
   .readmore{display:inline-block;margin-top:5px;font-size:12px;font-weight:700;color:var(--blue);text-decoration:none}
+  .fab{position:fixed;right:16px;bottom:78px;z-index:60;width:46px;height:46px;border-radius:50%;
+    background:var(--blue);color:#fff;font-size:22px;font-weight:800;box-shadow:var(--shadow);
+    display:grid;place-items:center}
+  .fab:active{transform:scale(.94)}
 
   /* chips */
   .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
@@ -214,6 +219,7 @@
   </div>
 </nav>
 
+<button class="fab hide" id="helpFab" title="Help">?</button>
 <div class="toast" id="toast"></div>
 <div class="confetti" id="confetti"></div>
 <div class="overlay" id="overlay"><div class="modal card" id="modalBody"></div></div>
@@ -264,6 +270,7 @@ const CHALLENGES = [
   {id:"r3", cat:"reading", type:"daily",  stars:10, icon:"✍️", en:"Learn 5 new English words and write them down", sv:"Lär dig 5 nya engelska ord och skriv ner dem med översättning."},
   {id:"r4", cat:"reading", type:"weekly", stars:40, icon:"🎬", en:"Watch a film in English with English subtitles", sv:"Se en film på engelska MED engelsk text (inte svensk)."},
   {id:"r5", cat:"reading", type:"daily",  stars:10, icon:"🧮", en:"Practise maths for 10 minutes", sv:"Träna matte i 10 minuter, t.ex. gångertabellen eller huvudräkning."},
+  {id:"r6", cat:"reading", type:"daily", max:10, stars:30, icon:"📝", en:"Write a short review of a book you read", sv:"Skriv en kort recension av en bok du läst."},
 
   {id:"a1", cat:"active", type:"daily",  stars:15, icon:"🚴", en:"Play outside or ride your bike for 30 minutes", sv:"Lek ute eller cykla i 30 minuter."},
   {id:"a2", cat:"active", type:"daily",  stars:10, icon:"🤸", en:"Do 20 jumping jacks and 10 push-ups", sv:"Gör 20 sprattelgubbar (jumping jacks) och 10 armhävningar."},
@@ -272,6 +279,9 @@ const CHALLENGES = [
   {id:"a6", cat:"active", type:"daily",  stars:15, icon:"🛹", en:"Practise a skill: skateboard, jump rope, football tricks", sv:"Träna en färdighet: skateboard, hopprep eller fotbollstrick."},
   {id:"a7", cat:"active", type:"weekly", stars:30, icon:"🧗", en:"Go to a playground or outdoor gym", sv:"Gå till en lekplats eller ett utegym."},
   {id:"a8", cat:"active", type:"weekly", stars:35, icon:"🫐", en:"Pick blueberries or other berries in the forest", sv:"Plocka blåbär eller andra bär i skogen."},
+  {id:"a9",  cat:"active", type:"daily", stars:10, icon:"🏸", en:"Play badminton", sv:"Spela badminton."},
+  {id:"a10", cat:"active", type:"daily", stars:10, icon:"🤸", en:"Do some gymnastics", sv:"Träna gymnastik."},
+  {id:"a11", cat:"active", type:"daily", stars:10, icon:"🦘", en:"Jump on the trampoline for 15 minutes", sv:"Hoppa studsmatta i 15 minuter."},
 
   /* ELTON THE DOG 🐶 */
   {id:"d1", cat:"dog", type:"daily",  stars:15, icon:"🦮", en:"Take Elton for a walk", sv:"Gå ut med Elton på en promenad."},
@@ -293,16 +303,17 @@ const CHALLENGES = [
   {id:"b8", cat:"kitchen", type:"weekly", stars:40, icon:"🇬🇧", en:"Bake or cook something British (scones, pancakes…)", sv:"Baka eller laga något brittiskt (scones, pannkakor…)."},
   {id:"b9", cat:"kitchen", type:"weekly", stars:30, icon:"🫐", en:"Make jam, a smoothie or a pie with berries you picked", sv:"Gör sylt, smoothie eller paj av bär du plockat."},
 
-  /* GOTHENBURG 🚋 (paid attractions and boat trips need a parent) */
-  {id:"g1", cat:"local", type:"weekly", stars:40, icon:"🐧", en:"Explore Slottsskogen and spot the penguins or moose", sv:"Utforska Slottsskogen och spana in pingvinerna eller älgarna."},
-  {id:"g2", cat:"local", type:"weekly", stars:35, icon:"🏘️", en:"Walk around Haga and look at the old wooden houses", sv:"Gå runt i Haga och titta på de gamla trähusen."},
-  {id:"g3", cat:"local", type:"weekly", stars:35, icon:"🌼", en:"Visit Botaniska trädgården and find 3 different flowers", sv:"Besök Botaniska trädgården och hitta 3 olika blommor."},
-  {id:"g4", cat:"local", type:"weekly", stars:30, icon:"📚", en:"Borrow a book from the city library (Stadsbiblioteket)", sv:"Låna en bok på Stadsbiblioteket."},
-  {id:"g5", cat:"local", type:"weekly", stars:30, icon:"💄", en:"Walk by the harbour and find 'Läppstiftet' (the Lipstick building)", sv:"Gå längs hamnen och hitta 'Läppstiftet'."},
-  {id:"g6", cat:"local", type:"weekly", stars:55, icon:"🎢", needsParent:true, en:"Go to Liseberg (with a parent)", sv:"Åk till Liseberg (med en förälder)."},
-  {id:"g7", cat:"local", type:"weekly", stars:50, icon:"🔬", needsParent:true, en:"Visit the Universeum science center (with a parent)", sv:"Besök Universeum (med en förälder)."},
-  {id:"g8", cat:"local", type:"weekly", stars:45, icon:"⛵", needsParent:true, en:"Take a Paddan boat tour (with a parent)", sv:"Åk en Paddan-båttur (med en förälder)."},
-  {id:"g9", cat:"local", type:"weekly", stars:40, icon:"🚢", needsParent:true, en:"Visit the Maritiman floating ships museum (with a parent)", sv:"Besök Maritiman, det flytande fartygsmuseet (med en förälder)."},
+  /* LOCAL / GOTHENBURG 🚋 — close to home (Kungssten/Majorna/Älvsborg), walkable */
+  {id:"g1", cat:"local", type:"weekly", stars:25, icon:"🏫", en:"Go to Engelska Skolan and play in the schoolyard", sv:"Gå till Engelska skolan och lek på skolgården."},
+  {id:"g2", cat:"local", type:"weekly", stars:30, icon:"🏛️", en:"Find a historic place near home and learn one fact about it", sv:"Hitta en historisk plats nära hemmet och lär dig ett fakta om den."},
+  {id:"g3", cat:"local", type:"weekly", stars:30, icon:"🦊", en:"Walk or bike to Slottsskogen and find an animal", sv:"Gå eller cykla till Slottsskogen och hitta ett djur."},
+  {id:"g4", cat:"local", type:"daily",  stars:15, icon:"🛝", en:"Play at a playground near home", sv:"Lek på en lekplats nära hemmet."},
+  {id:"g5", cat:"local", type:"weekly", stars:35, icon:"🥾", en:"Explore a trail in Änggårdsbergen nature reserve", sv:"Utforska en stig i Änggårdsbergens naturreservat."},
+  {id:"g6", cat:"local", type:"weekly", stars:25, icon:"🦕", en:"Visit the free Natural History Museum in Slottsskogen", sv:"Besök Naturhistoriska museet i Slottsskogen (gratis)."},
+  {id:"g7", cat:"local", type:"weekly", stars:25, icon:"🏘️", en:"Walk around Kungsladugård and look at the old houses", sv:"Gå runt i Kungsladugård och titta på de gamla husen."},
+  {id:"g8", cat:"local", type:"weekly", stars:30, icon:"🪵", en:"Find the old wooden houses at Gathenhielmska in Majorna", sv:"Hitta de gamla trähusen vid Gathenhielmska i Majorna."},
+  {id:"g9", cat:"local", type:"weekly", stars:25, icon:"📚", en:"Borrow a book from the local library", sv:"Låna en bok på det lokala biblioteket."},
+  {id:"g10",cat:"local", type:"weekly", stars:30, icon:"🌉", en:"Walk to Röda Sten under the Älvsborg bridge", sv:"Gå till Röda Sten under Älvsborgsbron."},
 
   {id:"h1", cat:"home", type:"daily",  stars:10, icon:"🛏️", en:"Make your bed and tidy your room", sv:"Bädda din säng och städa ditt rum."},
   {id:"h2", cat:"home", type:"daily",  stars:10, icon:"🍽️", en:"Help set or clear the table", sv:"Hjälp till att duka eller plocka undan bordet."},
@@ -327,11 +338,11 @@ const CHALLENGES = [
   {id:"e5", cat:"english", type:"daily",  stars:10, icon:"📝", en:"Write 3 sentences in English about your day", sv:"Skriv 3 meningar på engelska om din dag."},
 
   {id:"o1", cat:"english",  type:"once", stars:120, icon:"🗺️", en:"Help plan one thing we'll do in London", sv:"Hjälp till att planera EN sak vi ska göra i London. Sök upp den på en karta."},
-  {id:"o2", cat:"reading",  type:"once", stars:150, icon:"📚", en:"Finish reading a whole book this summer", sv:"Läs ut en HEL bok under sommaren."},
+  {id:"o2", cat:"reading",  type:"daily", max:10, stars:70, icon:"📚", en:"Finish reading a book — log each one (up to 10!)", sv:"Läs ut en bok — logga varje bok (upp till 10!)."},
   {id:"o3", cat:"english",  type:"once", stars:110, icon:"💷", en:"Learn about British money (pounds & pence)", sv:"Lär dig om brittiska pengar (pund och pence) och räkna lite växel."},
   {id:"o4", cat:"creative", type:"once", stars:90,  icon:"📷", en:"Make a 'London wish list' poster", sv:"Gör en affisch med en 'London-önskelista' — saker du vill se och göra."},
   {id:"o5", cat:"active",   type:"once", stars:110, icon:"🚇", en:"Learn how the London Underground (the Tube) works", sv:"Lär dig hur Londons tunnelbana ('the Tube') fungerar — kolla en linjekarta."},
-  {id:"o6", cat:"reading",  type:"once", stars:120, icon:"🎯", en:"Read a whole book in English this summer", sv:"Läs ut en hel bok på ENGELSKA under sommaren."},
+  {id:"o6", cat:"reading",  type:"daily", max:10, stars:100, icon:"🎯", en:"Finish a book in English — log each one (up to 10!)", sv:"Läs ut en bok på ENGELSKA — logga varje bok (upp till 10!)."},
   {id:"o7", cat:"english",  type:"once", stars:100, icon:"🇬🇧", en:"Learn 10 useful English travel phrases by heart", sv:"Lär dig 10 användbara engelska resefraser utantill."}
 ];
 
@@ -359,22 +370,22 @@ const RANKS = ["Rookie Traveller","Junior Explorer","City Scout","Map Master","G
 const STARS_PER_LEVEL = 150;
 
 const BADGES = [
-  {id:"first",   icon:"⭐", nm:"First Steps",  ds:"Finish your first quest", test:s=>s.totalDone>=1},
-  {id:"streak3", icon:"🔥", nm:"On Fire",      ds:"3-day streak", test:s=>s.bestStreak>=3},
-  {id:"streak7", icon:"🚀", nm:"Week Warrior", ds:"7-day streak", test:s=>s.bestStreak>=7},
-  {id:"streak14",icon:"💎", nm:"Unstoppable",  ds:"14-day streak", test:s=>s.bestStreak>=14},
-  {id:"book",    icon:"📚", nm:"Bookworm",     ds:"10 reading quests", test:s=>(s.catCount.reading||0)>=10},
-  {id:"sport",   icon:"🏆", nm:"Athlete",      ds:"10 active quests", test:s=>(s.catCount.active||0)>=10},
-  {id:"help",    icon:"🦸", nm:"Super Helper", ds:"10 home quests", test:s=>(s.catCount.home||0)>=10},
-  {id:"art",     icon:"🎨", nm:"Artist",       ds:"8 creative quests", test:s=>(s.catCount.creative||0)>=8},
-  {id:"kind",    icon:"💛", nm:"Kind Heart",   ds:"10 kindness quests", test:s=>(s.catCount.kind||0)>=10},
-  {id:"eng",     icon:"🇬🇧", nm:"English Star", ds:"12 English quests", test:s=>(s.catCount.english||0)>=12},
-  {id:"dog",     icon:"🐶", nm:"Elton's Bestie",ds:"10 Elton quests", test:s=>(s.catCount.dog||0)>=10},
-  {id:"chef",    icon:"🍪", nm:"Little Chef",   ds:"8 cooking quests", test:s=>(s.catCount.kitchen||0)>=8},
-  {id:"explorer",icon:"🚋", nm:"Gbg Explorer",  ds:"6 Gothenburg quests", test:s=>(s.catCount.local||0)>=6},
-  {id:"s500",    icon:"🌟", nm:"500 Club",     ds:"Earn 500 stars", test:s=>s.stars>=500},
-  {id:"s1500",   icon:"💫", nm:"1500 Club",    ds:"Earn 1500 stars", test:s=>s.stars>=1500},
-  {id:"s3000",   icon:"☄️", nm:"Star Legend",  ds:"Earn 3000 stars", test:s=>s.stars>=3000}
+  {id:"first",   icon:"⭐", nm:"First Steps",  ds:"Finish your first quest", svNm:"Första steget", svDs:"Klara din första utmaning", test:s=>s.totalDone>=1},
+  {id:"streak3", icon:"🔥", nm:"On Fire",      ds:"3-day streak", svNm:"Eld och lågor", svDs:"3 dagar i rad", test:s=>s.bestStreak>=3},
+  {id:"streak7", icon:"🚀", nm:"Week Warrior", ds:"7-day streak", svNm:"Veckokrigare", svDs:"7 dagar i rad", test:s=>s.bestStreak>=7},
+  {id:"streak14",icon:"💎", nm:"Unstoppable",  ds:"14-day streak", svNm:"Ostoppbar", svDs:"14 dagar i rad", test:s=>s.bestStreak>=14},
+  {id:"book",    icon:"📚", nm:"Bookworm",     ds:"10 reading quests", svNm:"Bokmal", svDs:"10 läsutmaningar", test:s=>(s.catCount.reading||0)>=10},
+  {id:"sport",   icon:"🏆", nm:"Athlete",      ds:"10 active quests", svNm:"Atlet", svDs:"10 aktiva utmaningar", test:s=>(s.catCount.active||0)>=10},
+  {id:"help",    icon:"🦸", nm:"Super Helper", ds:"10 home quests", svNm:"Superhjälpare", svDs:"10 hemma-utmaningar", test:s=>(s.catCount.home||0)>=10},
+  {id:"art",     icon:"🎨", nm:"Artist",       ds:"8 creative quests", svNm:"Konstnär", svDs:"8 kreativa utmaningar", test:s=>(s.catCount.creative||0)>=8},
+  {id:"kind",    icon:"💛", nm:"Kind Heart",   ds:"10 kindness quests", svNm:"Snäll själ", svDs:"10 snällhetsutmaningar", test:s=>(s.catCount.kind||0)>=10},
+  {id:"eng",     icon:"🇬🇧", nm:"English Star", ds:"12 English quests", svNm:"Engelska-stjärna", svDs:"12 engelska utmaningar", test:s=>(s.catCount.english||0)>=12},
+  {id:"dog",     icon:"🐶", nm:"Elton's Bestie",ds:"10 Elton quests", svNm:"Eltons bästis", svDs:"10 Elton-utmaningar", test:s=>(s.catCount.dog||0)>=10},
+  {id:"chef",    icon:"🍪", nm:"Little Chef",   ds:"8 cooking quests", svNm:"Liten kock", svDs:"8 matlagningsutmaningar", test:s=>(s.catCount.kitchen||0)>=8},
+  {id:"explorer",icon:"🚋", nm:"Gbg Explorer",  ds:"6 local quests", svNm:"Göteborgs-utforskare", svDs:"6 lokala utmaningar", test:s=>(s.catCount.local||0)>=6},
+  {id:"s500",    icon:"🌟", nm:"500 Club",     ds:"Earn 500 stars", svNm:"500-klubben", svDs:"Tjäna 500 stjärnor", test:s=>s.stars>=500},
+  {id:"s1500",   icon:"💫", nm:"1500 Club",    ds:"Earn 1500 stars", svNm:"1500-klubben", svDs:"Tjäna 1500 stjärnor", test:s=>s.stars>=1500},
+  {id:"s3000",   icon:"☄️", nm:"Star Legend",  ds:"Earn 3000 stars", svNm:"Stjärnlegend", svDs:"Tjäna 3000 stjärnor", test:s=>s.stars>=3000}
 ];
 
 const FACTS = [
@@ -401,15 +412,14 @@ function freshMe(name, avatar, id){
 }
 const EVIDENCE_CAP = 60; // keep this many newest proof photos (storage friendly)
 function defaultState(){
-  return { version:2, password:DEFAULT_PASSWORD, appPassword:APP_PASSWORD, tripStart:TRIP_START, tripEnd:TRIP_END,
-    soundOn:true, me:null, partner:null };
+  return { version:2, password:DEFAULT_PASSWORD, appPassword:APP_PASSWORD, appUnlocked:false,
+    tripStart:TRIP_START, tripEnd:TRIP_END, soundOn:true, me:null, partner:null };
 }
 
 let state = load();
 let activeTab = "home";
 let activeCat = "all";
 let setupAvatar = null;
-let unlocked = false;    // app-unlock gate (per session)
 let previewAll = false;  // Parents' preview: reveal all journey stops (per session)
 let parentUnlocked = false;       // Parents' Zone password gate (per session)
 let parentScreen = "dash";        // dash | gallery | evidence | confirmReset | confirmFull
@@ -563,20 +573,20 @@ function agoText(ts){
    SETUP (first launch)
    ========================================================================= */
 function renderSetup(){
-  document.getElementById("nav").classList.add("hide");
+  document.getElementById("nav").classList.add("hide"); showFab(false);
   const app=document.getElementById("app");
   app.innerHTML = `
    <div class="screen">
     <div class="brand">
       <span class="plane">✈️</span>
-      <h1>Road to London</h1>
+      <h1>Nord Challenges</h1>
       <div class="muted">Summer Challenge · Sommarutmaning</div>
       <div class="stripe"></div>
     </div>
     <div class="card">
       <label style="margin-top:0">Your name</label>
       <input id="nameInput" placeholder="Type your name" autocomplete="off" maxlength="20">
-      ${sv("Skriv ditt namn. Ditt syskon spelar på sin egen telefon.")}
+      ${sv("Skriv ditt namn.")}
       <div style="font-weight:700;margin-top:16px">Pick your character</div>
       <div class="avatars" id="avPick">
         ${AVATARS.map(a=>`<div class="avo ${setupAvatar===a?'sel':''}" data-av="${a}">${a}</div>`).join("")}
@@ -601,22 +611,24 @@ function renderSetup(){
   };
 }
 
-/* App-unlock screen (password "london" by default). */
+/* One-time app unlock (password "london" by default). Once unlocked it stays
+   unlocked on this device — the kids do an intro challenge to get the password. */
 function renderLock(){
-  document.getElementById("nav").classList.add("hide");
+  document.getElementById("nav").classList.add("hide"); showFab(false);
   const app=document.getElementById("app");
   app.innerHTML=`
    <div class="screen">
     <div class="brand">
       <span class="plane">✈️</span>
-      <h1>Road to London</h1>
+      <h1>Nord Challenges</h1>
       <div class="stripe"></div>
     </div>
     <div class="card">
-      <div class="center" style="font-weight:800">Hi ${esc(state.me.name)} ${state.me.avatar}</div>
-      <label>Password to unlock</label>
+      <div class="center" style="font-weight:800;margin-bottom:4px">Hi ${esc(state.me.name)} ${state.me.avatar}</div>
+      <div class="muted center" style="font-size:13px">Complete the intro challenge to get the password — you only enter it once!</div>
+      <label>Unlock password</label>
       <input id="unlockInput" type="password" placeholder="Password" autocomplete="off">
-      ${sv("Skriv lösenordet för att låsa upp appen.")}
+      ${sv("Skriv lösenordet för att låsa upp appen. Du behöver bara göra det en gång.")}
       <div id="unlockErr" class="danger" style="font-size:13px;margin-top:8px"></div>
       <button class="btn" id="unlockBtn" style="margin-top:14px">Unlock</button>
     </div>
@@ -625,7 +637,7 @@ function renderLock(){
   const input=document.getElementById("unlockInput");
   input.focus();
   const submit=()=>{
-    if(input.value===state.appPassword){ unlocked=true; activeTab="home"; render(); }
+    if(input.value===state.appPassword){ state.appUnlocked=true; save(); activeTab="home"; render(); }
     else { document.getElementById("unlockErr").textContent="Wrong password."; input.value=""; input.focus(); }
   };
   document.getElementById("unlockBtn").onclick=submit;
@@ -643,8 +655,9 @@ function updateApp(){
    ========================================================================= */
 function render(){
   if(!state.me){ renderSetup(); return; }
-  if(!unlocked){ renderLock(); return; }
+  if(!state.appUnlocked){ renderLock(); return; }
   document.getElementById("nav").classList.remove("hide");
+  showFab(true);
   document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===activeTab));
   const app=document.getElementById("app");
   if(activeTab==="home") app.innerHTML=viewHome();
@@ -692,6 +705,19 @@ function viewHome(){
       <div class="stat"><div class="v">${ico('🔥')}${m.streak}</div><div class="l">Day streak</div></div>
       <div class="stat"><div class="v">${doneToday}</div><div class="l">Done today</div></div>
       <div class="stat"><div class="v">${m.totalDone}</div><div class="l">Total quests</div></div>
+    </div>
+
+    <h2 class="sec">Where we're going</h2>
+    <div class="card">
+      <div class="row" style="gap:12px;align-items:flex-start">
+        <div style="font-size:28px;line-height:1">🇬🇧</div>
+        <div style="flex:1">
+          <b>London</b>
+          <div class="muted" style="font-size:13px;margin-top:3px">The capital of England — home of Big Ben, red double-decker buses and the River Thames. That's where our journey leads!</div>
+          ${sv("Englands huvudstad — med Big Ben, röda bussar och floden Themsen. Dit leder resan!")}
+          <a class="readmore" href="https://sv.wikipedia.org/wiki/London" target="_blank" rel="noopener">Läs mer om London ↗</a>
+        </div>
+      </div>
     </div>
 
     <h2 class="sec">Our family journey</h2>
@@ -748,12 +774,15 @@ function viewHome(){
   </div>`;
 }
 
-function viewChallenges(){
-  const cats=["all", ...Object.keys(CATS)];
+function questListHTML(){
   const list=CHALLENGES.filter(c=> activeCat==="all" ? true : c.cat===activeCat);
   const order={daily:0,weekly:1,once:2};
   const rank=c=> isMaxed(c) ? 2 : (isDone(c) ? 1 : 0);
   list.sort((a,b)=>{ const r=rank(a)-rank(b); if(r) return r; return order[a.type]-order[b.type]; });
+  return list.map(c=>challengeCard(c)).join("");
+}
+function viewChallenges(){
+  const cats=["all", ...Object.keys(CATS)];
   return `<div class="screen">
     ${topbar()}
     <div class="card center" style="margin-bottom:8px">
@@ -763,7 +792,7 @@ function viewChallenges(){
     <div class="chips">
       ${cats.map(c=>`<button class="chip ${activeCat===c?'active':''}" data-cat="${c}">${c==="all"?ico('✨')+'All':ico(CATS[c].icon)+CATS[c].name}</button>`).join("")}
     </div>
-    ${list.map(c=>challengeCard(c)).join("")}
+    <div id="qlist">${questListHTML()}</div>
   </div>`;
 }
 function challengeCard(c){
@@ -804,11 +833,12 @@ function viewBadges(){
     <div class="card center" style="margin-bottom:12px">
       <b>Your Badges</b>
       <div class="muted" style="font-size:13px;margin-top:4px">${m.badges.length} / ${BADGES.length} unlocked</div>
+      <div class="muted" style="font-size:12px;margin-top:4px">Press &amp; hold a badge for Swedish · Håll in för svenska</div>
     </div>
     <div class="badgegrid">
-      ${BADGES.map(b=>{
+      ${BADGES.map((b,i)=>{
         const got=m.badges.includes(b.id);
-        return `<div class="badge ${got?'unlocked':''}"><div class="b">${got?b.icon:'🔒'}</div><div class="nm">${b.nm}</div><div class="ds">${b.ds}</div></div>`;
+        return `<div class="badge ${got?'unlocked':''}" data-badge="${i}"><div class="b">${got?b.icon:'🔒'}</div><div class="nm">${b.nm}</div><div class="ds">${b.ds}</div></div>`;
       }).join("")}
     </div>
   </div>`;
@@ -1030,6 +1060,23 @@ function beep(){
 function openModal(html){ document.getElementById("modalBody").innerHTML=html; document.getElementById("overlay").classList.add("show"); }
 function closeModal(){ document.getElementById("overlay").classList.remove("show"); }
 
+/* Floating help (the "?" button). Short how-to, in English + Swedish. */
+function openHelp(){
+  openModal(`
+    <h3 style="margin:0 0 8px">How it works</h3>
+    <div style="font-size:14px;line-height:1.6">
+      • Do quests to earn ⭐ stars — they fill the family journey to London.<br>
+      • Tap <b>"Need help?"</b> on a quest for a Swedish hint.<br>
+      • <b>Press &amp; hold a badge</b> to read it in Swedish.<br>
+      • Tap <b>↻</b> at the top to update the app.<br>
+      • Some quests can be done up to 10 times — watch the x/10 counter.
+    </div>
+    ${sv("Gör utmaningar för att samla ⭐. Tryck 'Need help?' för svensk ledtråd. Håll in ett märke för svenska. Tryck ↻ uppe för att uppdatera.")}
+    <button class="btn" id="helpClose" style="margin-top:14px">Got it</button>`);
+  document.getElementById("helpClose").onclick=closeModal;
+}
+function showFab(on){ const f=document.getElementById("helpFab"); if(f) f.classList.toggle("hide", !on); }
+
 /* =========================================================================
    PARENTS' ZONE — in-page screens. parentScreen routes the sub-views.
    ========================================================================= */
@@ -1110,7 +1157,7 @@ function parentDashHTML(){
         <button class="btn outline" id="resetMe" style="color:var(--red);border-color:var(--red)">Reset ${esc(m.name)}'s progress</button>
         <button class="btn" id="resetAll" style="background:var(--red)">Reset entire game</button>
       </div>
-      <div class="muted center" style="font-size:11px;margin-top:14px">Road to London · v${APP_VERSION}</div>
+      <div class="muted center" style="font-size:11px;margin-top:14px">Nord Challenges · v${APP_VERSION}</div>
     </div>
    </div>`;
 }
@@ -1216,7 +1263,7 @@ function wireParent(){
       if(document.getElementById("fullPw").value!==state.password){ document.getElementById("fullErr").textContent="Wrong password."; return; }
       try{ localStorage.removeItem(STORE_KEY); }catch(e){}
       if(HAS_IDB) photoClear().catch(()=>{});
-      state=defaultState(); unlocked=false; previewAll=false; parentUnlocked=false; parentScreen="dash"; activeTab="home"; activeCat="all"; setupAvatar=null;
+      state=defaultState(); previewAll=false; parentUnlocked=false; parentScreen="dash"; activeTab="home"; activeCat="all"; setupAvatar=null;
       scrollTop(); render();
     };
     return;
@@ -1277,13 +1324,13 @@ async function exportProgress(){
     }
     const json=JSON.stringify(copy);
     const who=(state.me&&state.me.name?state.me.name:"backup").replace(/[^a-z0-9]/gi,"-");
-    const fname="road-to-london-"+who+".json";
+    const fname="nord-challenges-"+who+".json";
     // Prefer the OS share sheet so the file can go straight to the other phone
     // via AirDrop (iOS), Nearby Share / Quick Share (Android), Bluetooth, etc.
     try{
       const file=new File([json],fname,{type:"application/json"});
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:"Road to London backup"});
+        await navigator.share({files:[file], title:"Nord Challenges backup"});
         showToast("Backup shared"); return;
       }
     }catch(e){ if(e && e.name==="AbortError") return; }
@@ -1314,7 +1361,7 @@ function importProgressFile(file){
         }
       }
       parentUnlocked=true; parentScreen="dash"; save(); showToast("Progress restored"); render();
-    }catch(e){ alert("That file could not be read as a Road to London backup."); }
+    }catch(e){ alert("That file could not be read as a Nord Challenges backup."); }
   };
   r.onerror=()=>alert("Could not read that file.");
   r.readAsText(file);
@@ -1354,13 +1401,37 @@ function undoEvidence(i){
 /* =========================================================================
    WIRE EVENTS
    ========================================================================= */
+function wireQuestButtons(){
+  document.querySelectorAll("[data-help]").forEach(b=>b.onclick=()=>{ const x=document.getElementById("sv-"+b.dataset.help); if(x) x.classList.toggle("show"); });
+  document.querySelectorAll("[data-complete]").forEach(b=>b.onclick=()=>requestComplete(b.dataset.complete));
+}
+function wireBadges(){
+  document.querySelectorAll("[data-badge]").forEach(el=>{
+    const b=BADGES[parseInt(el.dataset.badge,10)]; if(!b) return;
+    let timer=null;
+    const show=ev=>{ ev.preventDefault(); timer=setTimeout(()=>showToast((b.svNm||b.nm)+": "+(b.svDs||b.ds)),300); };
+    const cancel=()=>{ if(timer){ clearTimeout(timer); timer=null; } };
+    el.addEventListener("touchstart", show, {passive:false});
+    el.addEventListener("touchend", cancel);
+    el.addEventListener("touchmove", cancel);
+    el.addEventListener("mousedown", show);
+    el.addEventListener("mouseup", cancel);
+    el.addEventListener("mouseleave", cancel);
+  });
+}
 function wire(){
   const tu=document.getElementById("toUpdate"); if(tu) tu.onclick=updateApp;
   const ts=document.getElementById("toSync"); if(ts) ts.onclick=()=>{ activeTab="sync"; scrollTop(); render(); };
   const gq=document.getElementById("goQuests"); if(gq) gq.onclick=()=>{ activeTab="challenges"; scrollTop(); render(); };
-  document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{ activeCat=b.dataset.cat; scrollTop(); render(); });
-  document.querySelectorAll("[data-help]").forEach(b=>b.onclick=()=>{ const x=document.getElementById("sv-"+b.dataset.help); if(x) x.classList.toggle("show"); });
-  document.querySelectorAll("[data-complete]").forEach(b=>b.onclick=()=>requestComplete(b.dataset.complete));
+  // category switch updates only the list (keeps your scroll position)
+  document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{
+    activeCat=b.dataset.cat;
+    document.querySelectorAll("[data-cat]").forEach(x=>x.classList.toggle("active", x.dataset.cat===activeCat));
+    const ql=document.getElementById("qlist"); if(ql){ ql.innerHTML=questListHTML(); wireQuestButtons(); }
+  });
+  wireQuestButtons();
+  wireBadges();
+  const hb=document.getElementById("helpFab"); if(hb) hb.onclick=openHelp;
   if(activeTab==="parent") wireParent();
 
   // sync tab
@@ -1368,7 +1439,7 @@ function wire(){
   if(cc) cc.onclick=async()=>{ const code=document.getElementById("myCode").textContent; try{ await navigator.clipboard.writeText(code); showToast("Code copied 📋"); }catch(e){ showToast("Select & copy the code"); } };
   const sc=document.getElementById("shareCode");
   if(sc) sc.onclick=async()=>{ const code=document.getElementById("myCode").textContent;
-    if(navigator.share){ try{ await navigator.share({title:"Road to London sync code", text:code}); }catch(e){} }
+    if(navigator.share){ try{ await navigator.share({title:"Nord Challenges sync code", text:code}); }catch(e){} }
     else { try{ await navigator.clipboard.writeText(code); showToast("Code copied 📋"); }catch(e){ showToast("Copy the code"); } } };
   const ac=document.getElementById("applyCode");
   if(ac) ac.onclick=()=>{
@@ -1382,7 +1453,7 @@ function wire(){
 }
 
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{
-  if(!state.me || !unlocked) return;
+  if(!state.me || !state.appUnlocked) return;
   activeTab=b.dataset.tab; activeCat="all";
   if(activeTab==="parent"){ parentUnlocked=false; parentScreen="dash"; }  // require password each visit
   scrollTop(); render();

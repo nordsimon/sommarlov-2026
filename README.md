@@ -1,4 +1,4 @@
-# 🇸🇪➜🇬🇧 Road to London — Summer Challenge Game
+# 🇸🇪➜🇬🇧 Nord Challenges — Summer Challenge Game
 
 A light, mobile-friendly game for **August (12)** and **Lykke (9)** to do challenges over
 **sommarlov 2026** and collect stars that power the family's journey to our **London trip,
@@ -19,7 +19,8 @@ experience. Progress is saved **on each phone** in the browser.
 Each kid plays on their **own phone**:
 
 1. First launch asks for their **name** and to **pick a character emoji**.
-2. After that the app asks for an **unlock password** (default **`london`**) each time it opens.
+2. The app then asks for an **unlock password** (default **`london`**) **once** — the kids get it by
+   doing a physical intro challenge. After that it stays unlocked on that device.
 3. They complete quests and earn ⭐ on their own phone.
 4. The **journey to London is powered by the combined family total** — both kids' stars added together.
    Every level shows the **points needed**, but the destination name stays hidden until unlocked (a
@@ -83,7 +84,12 @@ and saved on their phone. Parents can browse every proof photo in the **Parents'
 - **Stars ⭐** → **Levels & rank titles** (Rookie Traveller → … → London Legend).
 - **Combined journey map** from Sweden to London landmarks (Big Ben, London Eye, Tower Bridge,
   Buckingham Palace, museums, Hyde Park, Harry Potter Studios…) unlocking as the family total grows.
-- **Day streaks 🔥**, **collectible badges 🏅**, and **London facts** that unlock along the way.
+- **Day streaks 🔥**, **collectible badges 🏅** (press &amp; hold a badge for the Swedish version), and
+  **London facts** that unlock along the way. A floating **?** button explains the controls.
+- A **"Where we're going"** card on Home with a Swedish **Läs mer** link about London.
+- **Local Gothenburg quests** focus on the neighbourhood (Kungssten/Majorna/Älvsborg) — playgrounds,
+  Slottsskogen, Änggårdsbergen, historic spots — not far-away tourist trips.
+- Reading is recurring: **log up to 10 books** (Swedish and English) plus **write book reviews**.
 - **Countdown** to the trip (25–28 Oct 2026).
 - Confetti + a gentle sound on every completed quest. 🎉
 

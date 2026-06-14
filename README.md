@@ -22,8 +22,16 @@ Each kid plays on their **own phone**:
 2. After that the app asks for an **unlock password** (default **`london`**) each time it opens.
 3. They complete quests and earn ⭐ on their own phone.
 4. The **journey to London is powered by the combined family total** — both kids' stars added together.
-   All destinations are shown with the **points needed** to reach them, and each London sight has a
-   **"Läs mer"** link to Swedish Wikipedia so they can read about it in Swedish.
+   Every level shows the **points needed**, but the destination name stays hidden until unlocked (a
+   surprise). Unlocked London sights get a **"Läs mer"** link to Swedish Wikipedia.
+
+There's an **↻ update button at the top** of every screen so the kids can refetch the latest version
+themselves, and switching tabs scrolls back to the top.
+
+### Points
+Easy quests still pay (10⭐), but harder ones pay much more — weekly quests 25–55⭐ and one-time
+**big quests up to 150⭐**. Daily quests are capped at 10 completions each, so the top levels can't be
+farmed quickly: reaching the 9000⭐ top takes steady effort across the summer and lands near the trip.
 
 ### 🔗 Syncing their points
 Because they're on separate phones, points are combined with a simple **sync code**:
@@ -81,7 +89,8 @@ and saved on their phone. Parents can browse every proof photo in the **Parents'
 
 ## 🔒 Parents' Zone (password protected)
 
-Tap **Parents** in the bottom bar and enter the password to:
+The Parents' Zone is a normal in-page screen (no pop-ups). Tap **Parents** in the bottom bar and enter
+the password to:
 
 - View the **proof photo gallery**, and **undo an activity** if the evidence is too weak — it removes
   the photo, takes back the points, re-checks badges, and lets the kid do the quest again.

@@ -59,6 +59,7 @@
   .card:last-child{margin-bottom:0}
   .muted{color:var(--muted)}
   .center{text-align:center}
+  .ig{margin-right:.32em}
   .row{display:flex;align-items:center;gap:10px}
   .sv{color:#8a6a2f;font-size:12.5px;line-height:1.45;margin-top:6px;position:relative;padding-left:28px}
   .sv::before{content:"SV";position:absolute;left:0;top:0;font-size:9px;font-weight:800;letter-spacing:.5px;
@@ -246,7 +247,17 @@ const CATS = {
   english:  { name:"English & London",   icon:"🇬🇧" }
 };
 
-/* type: daily (once/day) · weekly (once/week) · once (one-time big quest) */
+/* type: daily (once/day) · weekly (once/week) · once (one-time big quest)
+   POINT DESIGN — tuned for two kids over ~19 weeks (15 Jun → 25 Oct) feeding a
+   combined journey that tops out at 9000 (Level 16):
+     • Easy daily quests: 10  — small but always worth doing.
+     • Standard daily: 15 · effort daily: 20.
+     • Weekly quests: 25–45 — clearly beat dailies, reward bigger effort.
+     • Outings (paid/with a parent): 40–55.
+     • One-time BIG quests: 90–150 — the hardest, most valuable goals.
+   Daily quests are also capped at 10 completions each (see maxCount), so the top
+   levels can't be farmed quickly — reaching 9000 needs steady effort, mixing in
+   weekly and big quests, and lands near the trip rather than mid-summer. */
 const CHALLENGES = [
   {id:"r1", cat:"reading", type:"daily",  stars:15, icon:"📖", en:"Read in English for 15 minutes", sv:"Läs på engelska i 15 minuter. Bok, serietidning eller app går bra."},
   {id:"r2", cat:"reading", type:"daily",  stars:15, icon:"📕", en:"Read a book in Swedish for 20 minutes", sv:"Läs en bok på svenska i 20 minuter."},
@@ -315,11 +326,13 @@ const CHALLENGES = [
   {id:"e4", cat:"english", type:"weekly", stars:40, icon:"🛒", en:"Order or ask for something in English (shop/café)", sv:"Beställ eller fråga om något på engelska (i en affär eller på ett café)."},
   {id:"e5", cat:"english", type:"daily",  stars:10, icon:"📝", en:"Write 3 sentences in English about your day", sv:"Skriv 3 meningar på engelska om din dag."},
 
-  {id:"o1", cat:"english",  type:"once", stars:80,  icon:"🗺️", en:"Help plan one thing we'll do in London", sv:"Hjälp till att planera EN sak vi ska göra i London. Sök upp den på en karta."},
-  {id:"o2", cat:"reading",  type:"once", stars:100, icon:"📚", en:"Finish reading a whole book this summer", sv:"Läs ut en HEL bok under sommaren."},
-  {id:"o3", cat:"english",  type:"once", stars:90,  icon:"💷", en:"Learn about British money (pounds & pence)", sv:"Lär dig om brittiska pengar (pund och pence) och räkna lite växel."},
-  {id:"o4", cat:"creative", type:"once", stars:70,  icon:"📷", en:"Make a 'London wish list' poster", sv:"Gör en affisch med en 'London-önskelista' — saker du vill se och göra."},
-  {id:"o5", cat:"active",   type:"once", stars:90,  icon:"🚇", en:"Learn how the London Underground (the Tube) works", sv:"Lär dig hur Londons tunnelbana ('the Tube') fungerar — kolla en linjekarta."}
+  {id:"o1", cat:"english",  type:"once", stars:120, icon:"🗺️", en:"Help plan one thing we'll do in London", sv:"Hjälp till att planera EN sak vi ska göra i London. Sök upp den på en karta."},
+  {id:"o2", cat:"reading",  type:"once", stars:150, icon:"📚", en:"Finish reading a whole book this summer", sv:"Läs ut en HEL bok under sommaren."},
+  {id:"o3", cat:"english",  type:"once", stars:110, icon:"💷", en:"Learn about British money (pounds & pence)", sv:"Lär dig om brittiska pengar (pund och pence) och räkna lite växel."},
+  {id:"o4", cat:"creative", type:"once", stars:90,  icon:"📷", en:"Make a 'London wish list' poster", sv:"Gör en affisch med en 'London-önskelista' — saker du vill se och göra."},
+  {id:"o5", cat:"active",   type:"once", stars:110, icon:"🚇", en:"Learn how the London Underground (the Tube) works", sv:"Lär dig hur Londons tunnelbana ('the Tube') fungerar — kolla en linjekarta."},
+  {id:"o6", cat:"reading",  type:"once", stars:120, icon:"🎯", en:"Read a whole book in English this summer", sv:"Läs ut en hel bok på ENGELSKA under sommaren."},
+  {id:"o7", cat:"english",  type:"once", stars:100, icon:"🇬🇧", en:"Learn 10 useful English travel phrases by heart", sv:"Lär dig 10 användbara engelska resefraser utantill."}
 ];
 
 /* Journey is powered by the COMBINED family stars (both kids together). */
@@ -398,6 +411,9 @@ let activeCat = "all";
 let setupAvatar = null;
 let unlocked = false;    // app-unlock gate (per session)
 let previewAll = false;  // Parents' preview: reveal all journey stops (per session)
+let parentUnlocked = false;       // Parents' Zone password gate (per session)
+let parentScreen = "dash";        // dash | gallery | evidence | confirmReset | confirmFull
+let parentEvi = 0;                // index of evidence photo being viewed
 
 /* ---------------------------------------------------------------------------
    CONTENT vs PROGRESS
@@ -528,6 +544,9 @@ function daysToTrip(){ const t=new Date(state.tripStart+"T00:00:00"); const n=ne
 function esc(s){ return (s+"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 /* Slim Swedish hint: one helper, consistent compact styling everywhere. */
 function sv(t){ return `<div class="sv">${esc(t)}</div>`; }
+/* Emoji with a little breathing room before the text that follows it. */
+function ico(e){ return `<span class="ig">${e}</span>`; }
+function scrollTop(){ try{ window.scrollTo(0,0); }catch(e){} }
 const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function tripRange(){
   const a=new Date(state.tripStart+"T00:00:00"), b=new Date(state.tripEnd+"T00:00:00");
@@ -640,7 +659,10 @@ function topbar(){
   const m=state.me;
   return `<div class="topbar">
      <div class="who"><span class="av">${m.avatar}</span><span>${esc(m.name)}</span></div>
-     <button class="ssync" id="toSync">🔗 Sync</button>
+     <div style="display:flex;gap:8px">
+       <button class="ssync" id="toUpdate" title="Update app">↻</button>
+       <button class="ssync" id="toSync">Sync</button>
+     </div>
    </div>`;
 }
 
@@ -660,14 +682,14 @@ function viewHome(){
     <div class="card">
       <div class="rankrow">
         <div><div class="muted" style="font-size:12px">LEVEL ${lvl}</div><div class="rankname">${rankOf(m.stars)}</div></div>
-        <div class="pill">⭐ ${m.stars}</div>
+        <div class="pill">${ico('⭐')}${m.stars}</div>
       </div>
       <div class="xpbar"><div class="xpfill" style="width:${pct}%"></div></div>
       <div class="muted" style="font-size:12px;margin-top:6px">${xp} / ${STARS_PER_LEVEL} stars to next level</div>
     </div>
 
     <div class="statgrid">
-      <div class="stat"><div class="v">🔥 ${m.streak}</div><div class="l">Day streak</div></div>
+      <div class="stat"><div class="v">${ico('🔥')}${m.streak}</div><div class="l">Day streak</div></div>
       <div class="stat"><div class="v">${doneToday}</div><div class="l">Done today</div></div>
       <div class="stat"><div class="v">${m.totalDone}</div><div class="l">Total quests</div></div>
     </div>
@@ -676,12 +698,12 @@ function viewHome(){
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <div style="font-weight:800">London trip</div>
-        <div class="pill">⭐ ${comb} together</div>
+        <div class="pill">${ico('⭐')}${comb} together</div>
       </div>
       <div class="team">
-        <div class="mate"><div class="av">${m.avatar}</div><div class="nm">${esc(m.name)} (you)</div><div class="st">⭐ ${m.stars}</div></div>
-        ${p ? `<div class="mate"><div class="av">${p.av}</div><div class="nm">${esc(p.nm)}</div><div class="st">⭐ ${p.st}</div></div>`
-            : `<div class="mate empty"><div class="av">➕</div><div>Sync with your sibling<br><span style="color:var(--blue)">tap 🔗 Sync</span></div></div>`}
+        <div class="mate"><div class="av">${m.avatar}</div><div class="nm">${esc(m.name)} (you)</div><div class="st">${ico('⭐')}${m.stars}</div></div>
+        ${p ? `<div class="mate"><div class="av">${p.av}</div><div class="nm">${esc(p.nm)}</div><div class="st">${ico('⭐')}${p.st}</div></div>`
+            : `<div class="mate empty"><div class="av">➕</div><div>Sync with your sibling<br><span style="color:var(--blue)">tap Sync</span></div></div>`}
       </div>
       <div class="countdown">
         <div><div class="v">${daysToTrip()}</div><div class="l">Days to go</div></div>
@@ -692,19 +714,25 @@ function viewHome(){
 
     <div class="card">
       ${previewAll ? `<div class="muted center" style="font-size:12px;margin-bottom:12px">Preview mode: all stops unlocked</div>`
-        : next ? `<div style="margin-bottom:12px">Next stop: <b>${next.en}</b><div class="muted" style="font-size:12px;margin-top:2px">${next.at-comb} stars to go</div></div>`
+        : next ? `<div style="margin-bottom:12px">Next level unlocks in <b>${next.at-comb} stars</b><div class="muted" style="font-size:12px;margin-top:2px">Where to? It's a surprise!</div></div>`
         : `<div style="margin-bottom:12px"><b>You reached the whole journey together!</b>${sv("Ni klarade hela resan tillsammans!")}</div>`}
       <div class="journey">
         ${JOURNEY.map((s,i)=>{
           const done = previewAll || comb>=s.at;
           const cur = !previewAll && i===jIdx+1;
-          return `<div class="stop ${done?'done':''} ${cur?'current':''}">
-             <div class="dot">${done?s.icon:'🔒'}</div>
-             <div class="t">${s.en}</div>
-             <div class="s">${s.sv}</div>
-             ${done
-                ? (s.link?`<a class="readmore" href="${s.link}" target="_blank" rel="noopener">Läs mer ↗</a>`:'')
-                : `<div class="need">${s.at} stars${comb<s.at?` · ${s.at-comb} to go`:''}</div>`}
+          if(done){
+            return `<div class="stop done">
+               <div class="dot">${s.icon}</div>
+               <div class="t">${s.en}</div>
+               <div class="s">${s.sv}</div>
+               ${s.link?`<a class="readmore" href="${s.link}" target="_blank" rel="noopener">Läs mer ↗</a>`:''}
+             </div>`;
+          }
+          // future stop: reveal only the level number and points needed, not what it is
+          return `<div class="stop ${cur?'current':''}">
+             <div class="dot">🔒</div>
+             <div class="t">Level ${i+1}</div>
+             <div class="need">${s.at} stars${comb<s.at?` · ${s.at-comb} to go`:''}</div>
            </div>`;
         }).join("")}
       </div>
@@ -733,7 +761,7 @@ function viewChallenges(){
       <div class="muted" style="font-size:12px;margin-top:3px">Tap "Need help?" for a Swedish hint.</div>
     </div>
     <div class="chips">
-      ${cats.map(c=>`<button class="chip ${activeCat===c?'active':''}" data-cat="${c}">${c==="all"?"✨ All":CATS[c].icon+" "+CATS[c].name}</button>`).join("")}
+      ${cats.map(c=>`<button class="chip ${activeCat===c?'active':''}" data-cat="${c}">${c==="all"?ico('✨')+'All':ico(CATS[c].icon)+CATS[c].name}</button>`).join("")}
     </div>
     ${list.map(c=>challengeCard(c)).join("")}
   </div>`;
@@ -760,7 +788,7 @@ function challengeCard(c){
        <div class="ico">${c.icon}</div>
        <div style="flex:1">
          <div class="en">${esc(c.en)}</div>
-         <div class="meta"><span class="tag">${CATS[c.cat].icon} ${CATS[c.cat].name}</span><span class="tag">${typeLabel}</span>${c.needsParent?'<span class="tag" style="background:var(--blue-soft);color:var(--blue)">👪 Parent</span>':''}${progressTag}</div>
+         <div class="meta"><span class="tag">${ico(CATS[c.cat].icon)}${CATS[c.cat].name}</span><span class="tag">${typeLabel}</span>${c.needsParent?`<span class="tag" style="background:var(--blue-soft);color:var(--blue)">${ico('👪')}Parent</span>`:''}${progressTag}</div>
        </div>
        <div class="pts">+${c.stars}</div>
      </div>
@@ -829,15 +857,12 @@ function viewSync(){
 }
 
 function viewParent(){
-  return `<div class="screen">
-    ${topbar()}
-    <div class="card center">
-      <div style="font-size:38px">🔒</div>
-      <b>Parents' Zone</b>
-      <div class="muted" style="font-size:13px;margin:6px 0 14px">Password needed to change settings or reset progress.</div>
-      <button class="btn" id="unlockParent">Unlock with password</button>
-    </div>
-  </div>`;
+  if(!parentUnlocked) return parentLockHTML();
+  if(parentScreen==="gallery") return galleryHTML();
+  if(parentScreen==="evidence") return evidenceHTML(parentEvi);
+  if(parentScreen==="confirmReset") return confirmResetHTML();
+  if(parentScreen==="confirmFull") return confirmFullHTML();
+  return parentDashHTML();
 }
 
 /* =========================================================================
@@ -999,102 +1024,204 @@ function beep(){
 }
 
 /* =========================================================================
-   PARENT MODALS
+   MODAL — used only by the quest photo-capture flow (a short, single action).
+   The Parents' Zone uses normal in-page screens instead (no scrolling pop-ups).
    ========================================================================= */
 function openModal(html){ document.getElementById("modalBody").innerHTML=html; document.getElementById("overlay").classList.add("show"); }
 function closeModal(){ document.getElementById("overlay").classList.remove("show"); }
 
-function parentPasswordPrompt(){
-  openModal(`
-    <h3 style="margin:0 0 6px">🔒 Enter password</h3>
-    ${sv("Skriv föräldralösenordet.")}
-    <input id="pwInput" type="password" placeholder="Password" autocomplete="off">
-    <div id="pwErr" class="danger" style="font-size:13px;margin-top:8px"></div>
-    <div class="row" style="gap:8px;margin-top:14px">
-      <button class="btn ghost" id="pwCancel" style="flex:1">Cancel</button>
-      <button class="btn" id="pwOk" style="flex:1">Unlock</button>
-    </div>`);
-  const input=document.getElementById("pwInput"); input.focus();
-  document.getElementById("pwCancel").onclick=closeModal;
-  const submit=()=>{ if(input.value===state.password){ closeModal(); parentDashboard(); } else { document.getElementById("pwErr").textContent="Wrong password. (Fel lösenord.)"; input.value=""; input.focus(); } };
-  document.getElementById("pwOk").onclick=submit;
-  input.onkeydown=e=>{ if(e.key==="Enter") submit(); };
+/* =========================================================================
+   PARENTS' ZONE — in-page screens. parentScreen routes the sub-views.
+   ========================================================================= */
+function parentGo(screen){ parentScreen=screen; scrollTop(); render(); }
+
+function parentLockHTML(){
+  return `<div class="screen">${topbar()}
+    <div class="card center">
+      <div style="font-size:36px">🔒</div>
+      <b>Parents' Zone</b>
+      <div class="muted" style="font-size:13px;margin:6px 0 12px">Enter the parents password.</div>
+      <input id="pPw" type="password" placeholder="Password" autocomplete="off">
+      <div id="pErr" class="danger" style="font-size:13px;margin-top:8px"></div>
+      <button class="btn" id="pUnlock" style="margin-top:12px">Unlock</button>
+    </div>
+   </div>`;
 }
 
-function parentDashboard(){
+function parentDashHTML(){
   const m=state.me;
-  openModal(`
-    <h3 style="margin:0 0 4px">🔧 Parents' Zone</h3>
-    <div class="muted" style="font-size:12px;margin-bottom:8px">This phone belongs to <b>${esc(m.name)}</b>. Changes save instantly.</div>
-
-    <label>Trip start</label>
-    <input id="tripStart" type="date" value="${esc(state.tripStart)}">
-    <label>Trip end</label>
-    <input id="tripEnd" type="date" value="${esc(state.tripEnd)}">
-
-    <label>Sound effects</label>
-    <select id="soundSel"><option value="on" ${state.soundOn?'selected':''}>On</option><option value="off" ${!state.soundOn?'selected':''}>Off</option></select>
-
-    <label>Player name</label>
-    <input id="nameInput" value="${esc(m.name)}" maxlength="20">
-
-    <label>Character emoji</label>
-    <input id="avInput" value="${esc(m.avatar)}" style="text-align:center;font-size:22px">
-
-    <label>App unlock password</label>
-    <input id="appPwInput" value="${esc(state.appPassword)}">
-
-    <div class="row" style="margin-top:12px"><button class="btn" id="saveSettings">Save settings</button></div>
-
-    <hr class="hr">
-    <div style="font-weight:800;margin-bottom:8px">Stats</div>
-    <div class="muted" style="font-size:13px;line-height:1.6">
-      ${esc(m.name)} (you): ⭐ ${m.stars} · Lvl ${levelOf(m.stars)} · ${m.totalDone} quests · 🔥 best ${m.bestStreak}<br>
-      ${state.partner?`${esc(state.partner.nm)} (synced ${agoText(state.partner.t)}): ⭐ ${state.partner.st}`:`Sibling not synced yet`}<br>
-      <b>Together: ⭐ ${combinedStars()}</b>
+  return `<div class="screen">${topbar()}
+    <div class="card">
+      <b>Settings</b>
+      <div class="muted" style="font-size:12px;margin-top:2px">This phone belongs to ${esc(m.name)}. Changes save instantly.</div>
+      <label>Trip start</label><input id="tripStart" type="date" value="${esc(state.tripStart)}">
+      <label>Trip end</label><input id="tripEnd" type="date" value="${esc(state.tripEnd)}">
+      <label>Sound effects</label>
+      <select id="soundSel"><option value="on" ${state.soundOn?'selected':''}>On</option><option value="off" ${!state.soundOn?'selected':''}>Off</option></select>
+      <label>Player name</label><input id="nameInput" value="${esc(m.name)}" maxlength="20">
+      <label>Character emoji</label><input id="avInput" value="${esc(m.avatar)}" style="text-align:center;font-size:22px">
+      <label>App unlock password</label><input id="appPwInput" value="${esc(state.appPassword)}">
+      <button class="btn" id="saveSettings" style="margin-top:14px">Save settings</button>
     </div>
 
-    <hr class="hr">
-    <div style="font-weight:800;margin-bottom:8px">Proof photos</div>
-    <div class="muted" style="font-size:12px;margin-bottom:8px">Photos ${esc(m.name)} took to prove each completed quest.</div>
-    <button class="btn outline" id="openGallery">View proof gallery (${(m.evidence||[]).length})</button>
-
-    <hr class="hr">
-    <div style="font-weight:800;margin-bottom:4px">Preview &amp; updates</div>
-    <div class="muted" style="font-size:12px;margin-bottom:8px">Unlock every journey stop to check the links, or fetch the latest app version.</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn outline" id="previewBtn">${previewAll?"Turn off preview (re-lock stops)":"Unlock all stops (preview)"}</button>
-      <button class="btn outline" id="updateBtn2">↻ Update app (refetch)</button>
+    <div class="card">
+      <b>Stats</b>
+      <div class="muted" style="font-size:13px;line-height:1.8;margin-top:6px">
+        ${esc(m.name)} (you): ${ico('⭐')}${m.stars} · Lvl ${levelOf(m.stars)} · ${m.totalDone} quests · best ${ico('🔥')}${m.bestStreak}<br>
+        ${state.partner?`${esc(state.partner.nm)} (synced ${agoText(state.partner.t)}): ${ico('⭐')}${state.partner.st}`:`Sibling not synced yet`}<br>
+        <b>Together: ${ico('⭐')}${combinedStars()}</b>
+      </div>
     </div>
 
-    <hr class="hr">
-    <label>Change password</label>
-    <input id="newPw" type="text" placeholder="New password (leave empty to keep)">
-    <button class="btn ghost" id="savePw" style="margin-top:10px">Update password</button>
-
-    <hr class="hr">
-    <div style="font-weight:800;margin-bottom:4px">Move to another device</div>
-    <div class="muted" style="font-size:12px;margin-bottom:8px">Sends a full backup (points, completed quests, photos). On a phone you can AirDrop / Bluetooth / Nearby Share it straight to the other device, then open the app there and restore.</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn outline" id="exportBtn">Send / save full backup</button>
-      <input type="file" accept="application/json,.json" id="importFile" class="hide">
-      <button class="btn outline" id="importBtn">Restore from backup</button>
-    </div>
-    <div class="muted" style="font-size:11px;margin-top:8px" id="storageInfo">Checking storage…</div>
-
-    <hr class="hr">
-    <div style="font-weight:800;margin-bottom:8px" class="danger">Reset</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn outline" id="clearSync">Clear synced sibling data</button>
-      <button class="btn outline" id="resetMe" style="color:var(--red);border-color:var(--red)">Reset ${esc(m.name)}'s progress</button>
-      <button class="btn" id="resetAll" style="background:var(--red)">Reset entire game (start over)</button>
+    <div class="card">
+      <b>Proof photos</b>
+      <div class="muted" style="font-size:12px;margin:4px 0 10px">Photos ${esc(m.name)} took to prove each quest.</div>
+      <button class="btn outline" id="openGallery">View proof gallery (${(m.evidence||[]).length})</button>
     </div>
 
-    <div class="muted center" style="font-size:11px;margin-top:14px">Road to London · v${APP_VERSION}</div>
-    <button class="btn ghost" id="closeModal" style="margin-top:10px">Close</button>
-  `);
+    <div class="card">
+      <b>Preview &amp; updates</b>
+      <div class="muted" style="font-size:12px;margin:4px 0 10px">Unlock every journey stop to check the links, or fetch the latest app version.</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn outline" id="previewBtn">${previewAll?"Turn off preview (re-lock stops)":"Unlock all stops (preview)"}</button>
+        <button class="btn outline" id="updateBtn2">↻ Update app (refetch)</button>
+      </div>
+    </div>
 
-  document.getElementById("closeModal").onclick=()=>{ closeModal(); render(); };
+    <div class="card">
+      <b>Move to another device</b>
+      <div class="muted" style="font-size:12px;margin:4px 0 10px">Sends a full backup (points, quests, photos). On a phone you can AirDrop / Nearby Share / Bluetooth it to the other device, then restore there.</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn outline" id="exportBtn">Send / save full backup</button>
+        <input type="file" accept="application/json,.json" id="importFile" class="hide">
+        <button class="btn outline" id="importBtn">Restore from backup</button>
+      </div>
+      <div class="muted" style="font-size:11px;margin-top:8px" id="storageInfo">Checking storage…</div>
+    </div>
+
+    <div class="card">
+      <label style="margin-top:0">Change parents password</label>
+      <input id="newPw" type="text" placeholder="New password (leave empty to keep)">
+      <button class="btn outline" id="savePw" style="margin-top:10px">Update password</button>
+      <hr class="hr">
+      <div style="font-weight:800;margin-bottom:8px" class="danger">Reset</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn outline" id="clearSync">Clear synced sibling data</button>
+        <button class="btn outline" id="resetMe" style="color:var(--red);border-color:var(--red)">Reset ${esc(m.name)}'s progress</button>
+        <button class="btn" id="resetAll" style="background:var(--red)">Reset entire game</button>
+      </div>
+      <div class="muted center" style="font-size:11px;margin-top:14px">Road to London · v${APP_VERSION}</div>
+    </div>
+   </div>`;
+}
+
+function galleryHTML(){
+  const ev=state.me.evidence||[];
+  return `<div class="screen">${topbar()}
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>Proof gallery</b><button class="btn ghost small" id="galBack">Back</button></div>
+      <div class="muted" style="font-size:12px;margin-top:4px">${ev.length} photo(s) · newest first · tap to enlarge.</div>
+    </div>
+    ${ev.length ? `<div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${ev.map((e,i)=>`<div data-ev="${i}" style="cursor:pointer">
+            <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg2)">
+            <div style="font-size:11px;font-weight:700;margin-top:4px;line-height:1.25">${ico(e.icon)}${esc(e.en)}</div>
+            <div class="muted" style="font-size:10px">${evDate(e.ts,true)}</div>
+          </div>`).join("")}
+      </div></div>` : `<div class="card muted">No photos yet.</div>`}
+   </div>`;
+}
+
+function evidenceHTML(i){
+  const e=state.me.evidence[i];
+  if(!e) return galleryHTML();
+  return `<div class="screen">${topbar()}
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>${ico(e.icon)}${esc(e.en)}</b><button class="btn ghost small" id="evBack">Back</button></div>
+      <div class="muted" style="font-size:12px;margin:4px 0 10px">Completed ${evDate(e.ts,true)}</div>
+      <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;border-radius:12px;border:1px solid var(--line);background:var(--bg2)">
+      <div class="muted" style="font-size:12px;margin-top:10px">If the evidence is too weak, undo the activity — it removes this photo, takes back ${e.st!=null?e.st:""} stars and lets ${esc(state.me.name)} do it again.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+        <button class="btn" id="evUndo" style="background:var(--red)">Undo activity (weak evidence)</button>
+        <button class="btn outline" id="evDel">Remove photo only</button>
+      </div>
+    </div>
+   </div>`;
+}
+
+function confirmResetHTML(){
+  return `<div class="screen">${topbar()}
+    <div class="card">
+      <b class="danger">Reset ${esc(state.me.name)}'s progress?</b>
+      <p style="font-size:14px">Permanently erases stars, badges and streak. Profile and synced sibling stay.</p>
+      ${sv("Detta raderar "+state.me.name+"s framsteg. Går inte att ångra.")}
+      <label>Type the parents password to confirm</label>
+      <input id="confPw" type="password" autocomplete="off">
+      <div id="confErr" class="danger" style="font-size:13px;margin-top:8px"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+        <button class="btn" id="confOk" style="background:var(--red)">Erase progress</button>
+        <button class="btn ghost" id="confCancel">Cancel</button>
+      </div>
+    </div>
+   </div>`;
+}
+
+function confirmFullHTML(){
+  return `<div class="screen">${topbar()}
+    <div class="card">
+      <b class="danger">Reset the entire game?</b>
+      <p style="font-size:14px">Erases <b>everything</b> on this phone — profile, points, quests, photos, synced sibling and settings — and starts over.</p>
+      ${sv("Detta raderar ALLT på denna telefon och börjar om. Går inte att ångra.")}
+      <label>Type the parents password to confirm</label>
+      <input id="fullPw" type="password" autocomplete="off">
+      <div id="fullErr" class="danger" style="font-size:13px;margin-top:8px"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+        <button class="btn" id="fullOk" style="background:var(--red)">Erase everything</button>
+        <button class="btn ghost" id="fullCancel">Cancel</button>
+      </div>
+    </div>
+   </div>`;
+}
+
+function wireParent(){
+  if(!parentUnlocked){
+    const inp=document.getElementById("pPw"); if(inp) inp.focus();
+    const submit=()=>{ if(inp.value===state.password){ parentUnlocked=true; parentScreen="dash"; scrollTop(); render(); } else { document.getElementById("pErr").textContent="Wrong password."; inp.value=""; inp.focus(); } };
+    const b=document.getElementById("pUnlock"); if(b) b.onclick=submit;
+    if(inp) inp.onkeydown=e=>{ if(e.key==="Enter") submit(); };
+    return;
+  }
+  if(parentScreen==="gallery"){
+    document.getElementById("galBack").onclick=()=>parentGo("dash");
+    document.querySelectorAll("[data-ev]").forEach(d=>d.onclick=()=>{ parentEvi=parseInt(d.dataset.ev,10); parentGo("evidence"); });
+    hydrateImgs(); return;
+  }
+  if(parentScreen==="evidence"){
+    document.getElementById("evBack").onclick=()=>parentGo("gallery");
+    document.getElementById("evDel").onclick=()=>{ const old=state.me.evidence.splice(parentEvi,1)[0]; if(old && old.key) photoDel(old.key); save(); parentGo("gallery"); };
+    document.getElementById("evUndo").onclick=()=>undoEvidence(parentEvi);
+    hydrateImgs(); return;
+  }
+  if(parentScreen==="confirmReset"){
+    document.getElementById("confCancel").onclick=()=>parentGo("dash");
+    document.getElementById("confOk").onclick=()=>{
+      if(document.getElementById("confPw").value!==state.password){ document.getElementById("confErr").textContent="Wrong password."; return; }
+      state.me=freshMe(state.me.name, state.me.avatar, state.me.id); save(); showToast("Progress reset"); parentGo("dash");
+    };
+    return;
+  }
+  if(parentScreen==="confirmFull"){
+    document.getElementById("fullCancel").onclick=()=>parentGo("dash");
+    document.getElementById("fullOk").onclick=()=>{
+      if(document.getElementById("fullPw").value!==state.password){ document.getElementById("fullErr").textContent="Wrong password."; return; }
+      try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+      if(HAS_IDB) photoClear().catch(()=>{});
+      state=defaultState(); unlocked=false; previewAll=false; parentUnlocked=false; parentScreen="dash"; activeTab="home"; activeCat="all"; setupAvatar=null;
+      scrollTop(); render();
+    };
+    return;
+  }
+  // dashboard
   document.getElementById("saveSettings").onclick=()=>{
     state.tripStart=document.getElementById("tripStart").value||TRIP_START;
     state.tripEnd=document.getElementById("tripEnd").value||TRIP_END;
@@ -1102,18 +1229,14 @@ function parentDashboard(){
     state.me.name=document.getElementById("nameInput").value.trim()||state.me.name;
     state.me.avatar=document.getElementById("avInput").value.trim()||state.me.avatar;
     state.appPassword=document.getElementById("appPwInput").value.trim()||state.appPassword;
-    save(); showToast("Saved"); parentDashboard();
+    save(); showToast("Saved"); render();
   };
-  document.getElementById("savePw").onclick=()=>{
-    const v=document.getElementById("newPw").value.trim();
-    if(v){ state.password=v; save(); showToast("Password updated"); }
-    parentDashboard();
-  };
-  document.getElementById("clearSync").onclick=()=>{ state.partner=null; save(); showToast("Sync cleared"); parentDashboard(); };
-  document.getElementById("resetMe").onclick=confirmResetMe;
-  document.getElementById("resetAll").onclick=confirmFullReset;
-  document.getElementById("openGallery").onclick=openGallery;
-  document.getElementById("previewBtn").onclick=()=>{ previewAll=!previewAll; closeModal(); activeTab="home"; showToast(previewAll?"Preview on — all stops unlocked":"Preview off"); render(); };
+  document.getElementById("savePw").onclick=()=>{ const v=document.getElementById("newPw").value.trim(); if(v){ state.password=v; save(); showToast("Password updated"); render(); } };
+  document.getElementById("clearSync").onclick=()=>{ state.partner=null; save(); showToast("Sync cleared"); render(); };
+  document.getElementById("resetMe").onclick=()=>parentGo("confirmReset");
+  document.getElementById("resetAll").onclick=()=>parentGo("confirmFull");
+  document.getElementById("openGallery").onclick=()=>parentGo("gallery");
+  document.getElementById("previewBtn").onclick=()=>{ previewAll=!previewAll; activeTab="home"; scrollTop(); showToast(previewAll?"Preview on":"Preview off"); render(); };
   document.getElementById("updateBtn2").onclick=updateApp;
   document.getElementById("exportBtn").onclick=exportProgress;
   const impFile=document.getElementById("importFile");
@@ -1134,7 +1257,7 @@ function showStorageInfo(){
       tasks.push(navigator.storage.estimate().then(({usage})=>{ if(usage!=null) parts.push("~"+(usage/1048576).toFixed(1)+" MB used"); }));
     }
     if(navigator.storage&&navigator.storage.persisted){
-      tasks.push(navigator.storage.persisted().then(p=>parts.push(p?"protected ✓":"not protected — back up regularly")));
+      tasks.push(navigator.storage.persisted().then(p=>parts.push(p?"protected":"not protected — back up regularly")));
     }
     if(tasks.length) Promise.all(tasks).then(done).catch(done); else done();
   }catch(e){ done(); }
@@ -1190,7 +1313,7 @@ function importProgressFile(file){
           if(e.img){ const k=photoKey(e.ts||Date.now()); try{ await photoPut(k, e.img); e.key=k; delete e.img; }catch(_){} }
         }
       }
-      save(); closeModal(); showToast("Progress restored"); render();
+      parentUnlocked=true; parentScreen="dash"; save(); showToast("Progress restored"); render();
     }catch(e){ alert("That file could not be read as a Road to London backup."); }
   };
   r.onerror=()=>alert("Could not read that file.");
@@ -1203,47 +1326,11 @@ function evDate(ts, full){
   if(!full) return base;
   return base+" "+d.getFullYear()+", "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
 }
-function openGallery(){
-  const ev=state.me.evidence||[];
-  openModal(`
-    <h3 style="margin:0 0 4px">Proof gallery</h3>
-    <div class="muted" style="font-size:12px;margin-bottom:10px">${ev.length} photo(s) · newest first · tap to enlarge.</div>
-    ${ev.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        ${ev.map((e,i)=>`<div data-ev="${i}" style="cursor:pointer">
-            <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg2)">
-            <div style="font-size:11px;font-weight:700;margin-top:4px;line-height:1.25">${e.icon} ${esc(e.en)}</div>
-            <div class="muted" style="font-size:10px">${evDate(e.ts,true)}</div>
-          </div>`).join("")}
-      </div>` : `<div class="muted">No photos yet. They appear here when ${esc(state.me.name)} completes a quest.</div>`}
-    <button class="btn ghost" id="galBack" style="margin-top:16px">Back</button>`);
-  hydrateImgs(document.getElementById("modalBody"));
-  document.getElementById("galBack").onclick=parentDashboard;
-  document.querySelectorAll("[data-ev]").forEach(d=>d.onclick=()=>openEvidence(parseInt(d.dataset.ev,10)));
-}
-function openEvidence(i){
-  const e=state.me.evidence[i];
-  if(!e){ openGallery(); return; }
-  openModal(`
-    <h3 style="margin:0 0 4px">${e.icon} ${esc(e.en)}</h3>
-    <div class="muted" style="font-size:12px;margin-bottom:8px">Completed ${evDate(e.ts,true)}</div>
-    <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;border-radius:12px;border:1px solid var(--line);background:var(--bg2)">
-    <div class="muted" style="font-size:12px;margin-top:10px">If the evidence is too weak, undo the activity — it removes this photo, takes back the ${e.st!=null?e.st:""} stars and lets ${esc(state.me.name)} do it again.</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
-      <button class="btn" id="evUndo" style="background:var(--red)">Undo activity (weak evidence)</button>
-      <button class="btn outline" id="evDel">Remove photo only</button>
-      <button class="btn ghost" id="evBack">Back</button>
-    </div>`);
-  hydrateImgs(document.getElementById("modalBody"));
-  document.getElementById("evBack").onclick=openGallery;
-  document.getElementById("evDel").onclick=()=>{ const old=state.me.evidence.splice(i,1)[0]; if(old && old.key) photoDel(old.key); save(); openGallery(); };
-  document.getElementById("evUndo").onclick=()=>undoEvidence(i);
-}
-
 /* Parent rejects a completion: refund points, free the slot, drop the photo,
    and re-evaluate badges. The challenge becomes available to do again. */
 function undoEvidence(i){
   const m=state.me, e=m.evidence[i];
-  if(!e) { openGallery(); return; }
+  if(!e){ parentGo("gallery"); return; }
   const c=CHALLENGES.find(x=>x.id===e.cid);
   // reconstruct the completion key if older entries didn't store it
   let pk=e.pk;
@@ -1261,62 +1348,20 @@ function undoEvidence(i){
   m.evidence.splice(i,1);
   // drop any badges that are no longer earned
   m.badges=m.badges.filter(id=>{ const b=BADGES.find(x=>x.id===id); return b?b.test(m):false; });
-  save(); showToast("Activity undone — "+refund+" stars removed"); openGallery();
-}
-
-function confirmResetMe(){
-  openModal(`
-    <h3 style="margin:0 0 6px" class="danger">⚠️ Are you sure?</h3>
-    <p style="font-size:14px">This permanently erases <b>${esc(state.me.name)}'s</b> progress (stars, badges, streak). Identity and synced sibling data stay.</p>
-    ${sv("Detta raderar "+state.me.name+"s framsteg. Går inte att ångra.")}
-    <label>Type the password to confirm</label>
-    <input id="confPw" type="password" autocomplete="off">
-    <div id="confErr" class="danger" style="font-size:13px;margin-top:8px"></div>
-    <div class="row" style="gap:8px;margin-top:14px">
-      <button class="btn ghost" id="confCancel" style="flex:1">Cancel</button>
-      <button class="btn" id="confOk" style="flex:1;background:var(--red)">Erase</button>
-    </div>`);
-  document.getElementById("confCancel").onclick=parentDashboard;
-  document.getElementById("confOk").onclick=()=>{
-    if(document.getElementById("confPw").value!==state.password){ document.getElementById("confErr").textContent="Wrong password."; return; }
-    state.me=freshMe(state.me.name, state.me.avatar, state.me.id);
-    save(); closeModal(); showToast("Progress reset ✓"); render();
-  };
-}
-
-/* Full reset: wipe everything and start over from the setup screen. */
-function confirmFullReset(){
-  openModal(`
-    <h3 style="margin:0 0 6px" class="danger">⚠️ Reset the entire game?</h3>
-    <p style="font-size:14px">This erases <b>everything</b> on this phone — profile, all points, completed quests, proof photos, synced sibling and settings — and starts over from the very beginning.</p>
-    ${sv("Detta raderar ALLT på denna telefon och börjar om från början. Går inte att ångra.")}
-    <label>Type the parents password to confirm</label>
-    <input id="fullPw" type="password" autocomplete="off">
-    <div id="fullErr" class="danger" style="font-size:13px;margin-top:8px"></div>
-    <div class="row" style="gap:8px;margin-top:14px">
-      <button class="btn ghost" id="fullCancel" style="flex:1">Cancel</button>
-      <button class="btn" id="fullOk" style="flex:1;background:var(--red)">Erase everything</button>
-    </div>`);
-  document.getElementById("fullCancel").onclick=parentDashboard;
-  document.getElementById("fullOk").onclick=()=>{
-    if(document.getElementById("fullPw").value!==state.password){ document.getElementById("fullErr").textContent="Wrong password."; return; }
-    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
-    if(HAS_IDB) photoClear().catch(()=>{});
-    state=defaultState(); unlocked=false; previewAll=false; activeTab="home"; activeCat="all"; setupAvatar=null;
-    closeModal(); showToast("Game reset"); render();
-  };
+  save(); showToast("Activity undone — "+refund+" stars removed"); parentGo("gallery");
 }
 
 /* =========================================================================
    WIRE EVENTS
    ========================================================================= */
 function wire(){
-  const ts=document.getElementById("toSync"); if(ts) ts.onclick=()=>{ activeTab="sync"; render(); };
-  const gq=document.getElementById("goQuests"); if(gq) gq.onclick=()=>{ activeTab="challenges"; render(); };
-  document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{ activeCat=b.dataset.cat; render(); });
+  const tu=document.getElementById("toUpdate"); if(tu) tu.onclick=updateApp;
+  const ts=document.getElementById("toSync"); if(ts) ts.onclick=()=>{ activeTab="sync"; scrollTop(); render(); };
+  const gq=document.getElementById("goQuests"); if(gq) gq.onclick=()=>{ activeTab="challenges"; scrollTop(); render(); };
+  document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{ activeCat=b.dataset.cat; scrollTop(); render(); });
   document.querySelectorAll("[data-help]").forEach(b=>b.onclick=()=>{ const x=document.getElementById("sv-"+b.dataset.help); if(x) x.classList.toggle("show"); });
   document.querySelectorAll("[data-complete]").forEach(b=>b.onclick=()=>requestComplete(b.dataset.complete));
-  const up=document.getElementById("unlockParent"); if(up) up.onclick=parentPasswordPrompt;
+  if(activeTab==="parent") wireParent();
 
   // sync tab
   const cc=document.getElementById("copyCode");
@@ -1336,7 +1381,12 @@ function wire(){
   };
 }
 
-document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{ if(!state.me) return; activeTab=b.dataset.tab; activeCat="all"; render(); });
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{
+  if(!state.me || !unlocked) return;
+  activeTab=b.dataset.tab; activeCat="all";
+  if(activeTab==="parent"){ parentUnlocked=false; parentScreen="dash"; }  // require password each visit
+  scrollTop(); render();
+});
 document.getElementById("overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") closeModal(); });
 
 requestPersist();   // ask the browser to keep our data (resists eviction)

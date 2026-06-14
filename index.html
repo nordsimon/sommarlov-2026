@@ -39,7 +39,6 @@
     color:var(--ink);
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
   }
   .app{max-width:560px;margin:0 auto;padding:0 16px 100px;position:relative}
 
@@ -140,10 +139,6 @@
   .stop .need{font-size:11px;color:var(--muted)}
   .stop:not(.done) .t{color:var(--muted)}
   .readmore{display:inline-block;margin-top:5px;font-size:12px;font-weight:700;color:var(--blue);text-decoration:none}
-  .fab{position:fixed;right:16px;bottom:78px;z-index:60;width:46px;height:46px;border-radius:50%;
-    background:var(--blue);color:#fff;font-size:22px;font-weight:800;box-shadow:var(--shadow);
-    display:grid;place-items:center}
-  .fab:active{transform:scale(.94)}
 
   /* chips */
   .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
@@ -219,7 +214,6 @@
   </div>
 </nav>
 
-<button class="fab hide" id="helpFab" title="Help">?</button>
 <div class="toast" id="toast"></div>
 <div class="confetti" id="confetti"></div>
 <div class="overlay" id="overlay"><div class="modal card" id="modalBody"></div></div>
@@ -575,7 +569,7 @@ function agoText(ts){
    SETUP (first launch)
    ========================================================================= */
 function renderSetup(){
-  document.getElementById("nav").classList.add("hide"); showFab(false);
+  document.getElementById("nav").classList.add("hide");
   const app=document.getElementById("app");
   app.innerHTML = `
    <div class="screen">
@@ -616,7 +610,7 @@ function renderSetup(){
 /* One-time app unlock (password "london" by default). Once unlocked it stays
    unlocked on this device — the kids do an intro challenge to get the password. */
 function renderLock(){
-  document.getElementById("nav").classList.add("hide"); showFab(false);
+  document.getElementById("nav").classList.add("hide");
   const app=document.getElementById("app");
   app.innerHTML=`
    <div class="screen">
@@ -659,7 +653,6 @@ function render(){
   if(!state.me){ renderSetup(); return; }
   if(!state.appUnlocked){ renderLock(); return; }
   document.getElementById("nav").classList.remove("hide");
-  showFab(true);
   applyPendingSync();
   document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===activeTab));
   const app=document.getElementById("app");
@@ -778,10 +771,8 @@ function viewHome(){
 }
 
 function questListHTML(){
+  // Keep a stable order (as defined) so completing a quest doesn't make it jump.
   const list=CHALLENGES.filter(c=> activeCat==="all" ? true : c.cat===activeCat);
-  const order={daily:0,weekly:1,once:2};
-  const rank=c=> isMaxed(c) ? 2 : (isDone(c) ? 1 : 0);
-  list.sort((a,b)=>{ const r=rank(a)-rank(b); if(r) return r; return order[a.type]-order[b.type]; });
   return list.map(c=>challengeCard(c)).join("");
 }
 function viewChallenges(){
@@ -1082,22 +1073,6 @@ function beep(){
 function openModal(html){ document.getElementById("modalBody").innerHTML=html; document.getElementById("overlay").classList.add("show"); }
 function closeModal(){ document.getElementById("overlay").classList.remove("show"); }
 
-/* Floating help (the "?" button). Short how-to, in English + Swedish. */
-function openHelp(){
-  openModal(`
-    <h3 style="margin:0 0 8px">How it works</h3>
-    <div style="font-size:14px;line-height:1.6">
-      • Do quests to earn ⭐ stars — they fill the family journey to London.<br>
-      • Tap <b>"Need help?"</b> on a quest for a Swedish hint.<br>
-      • <b>Press &amp; hold a badge</b> to read it in Swedish.<br>
-      • Tap <b>↻</b> at the top to update the app.<br>
-      • Some quests can be done up to 10 times — watch the x/10 counter.
-    </div>
-    ${sv("Gör utmaningar för att samla ⭐. Tryck 'Need help?' för svensk ledtråd. Håll in ett märke för svenska. Tryck ↻ uppe för att uppdatera.")}
-    <button class="btn" id="helpClose" style="margin-top:14px">Got it</button>`);
-  document.getElementById("helpClose").onclick=closeModal;
-}
-function showFab(on){ const f=document.getElementById("helpFab"); if(f) f.classList.toggle("hide", !on); }
 
 /* =========================================================================
    PARENTS' ZONE — in-page screens. parentScreen routes the sub-views.
@@ -1453,7 +1428,6 @@ function wire(){
   });
   wireQuestButtons();
   wireBadges();
-  const hb=document.getElementById("helpFab"); if(hb) hb.onclick=openHelp;
   if(activeTab==="parent") wireParent();
 
   // sync tab

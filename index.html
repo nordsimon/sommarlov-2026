@@ -435,14 +435,74 @@ function load(){
 function save(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
   catch(e){
-    // Storage full (usually from photos): drop oldest proof photos and retry.
+    // Storage full: drop oldest evidence metadata and retry. With photos now in
+    // IndexedDB this should be very rare (localStorage only holds small metadata).
     if(state.me && state.me.evidence && state.me.evidence.length){
       while(state.me.evidence.length){
-        state.me.evidence.pop(); // oldest is at the end
+        const old=state.me.evidence.pop();
+        if(old && old.key) photoDel(old.key);
         try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); return; }catch(_){}
       }
     }
   }
+}
+
+/* =========================================================================
+   PHOTO STORAGE (IndexedDB)
+   Why not localStorage for photos:
+     • localStorage is small (~5 MB per ORIGIN — shared with everything else on
+       this github.io origin) and synchronous.
+     • We rewrite the whole state on every save, so base64 photos there get slow
+       and hit the quota fast (~60 photos ≈ several MB).
+   So proof photos live in IndexedDB (much larger, stored per-item, async) and
+   localStorage keeps only lightweight metadata + the IndexedDB key.
+   Falls back to inline base64 (old behaviour) if IndexedDB is unavailable.
+   Note: on iOS, script storage can be evicted after ~7 days of not opening the
+   site unless it's added to the Home Screen — hence requestPersist() + backups.
+   ========================================================================= */
+const HAS_IDB = (typeof indexedDB !== "undefined" && !!indexedDB);
+const IDB_NAME="roadToLondon", IDB_STORE="photos";
+let _dbp=null;
+function idb(){
+  if(_dbp) return _dbp;
+  _dbp=new Promise((res,rej)=>{
+    const r=indexedDB.open(IDB_NAME,1);
+    r.onupgradeneeded=()=>r.result.createObjectStore(IDB_STORE);
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+  return _dbp;
+}
+function idbReq(mode, fn){
+  return idb().then(d=>new Promise((res,rej)=>{
+    const t=d.transaction(IDB_STORE,mode), rq=fn(t.objectStore(IDB_STORE));
+    t.oncomplete=()=>res(rq && rq.result);
+    t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error);
+  }));
+}
+const photoPut=(k,v)=>idbReq("readwrite",st=>st.put(v,k));
+const photoGet=k=>idbReq("readonly",st=>st.get(k));
+const photoDel=k=>idbReq("readwrite",st=>st.delete(k));
+const photoClear=()=>idbReq("readwrite",st=>st.clear());
+function photoKey(ts){ return "ev_"+ts+"_"+Math.random().toString(36).slice(2,7); }
+/* Resolve an evidence entry to its image data URL (Promise<string|null>). */
+function evImg(e){ return e.img ? Promise.resolve(e.img) : (e.key && HAS_IDB ? photoGet(e.key).catch(()=>null) : Promise.resolve(null)); }
+/* Set <img src> for any rendered evidence thumbnails that load from IndexedDB. */
+function hydrateImgs(root){
+  (root||document).querySelectorAll("img[data-k]").forEach(img=>{
+    photoGet(img.getAttribute("data-k")).then(d=>{ if(d) img.src=d; }).catch(()=>{});
+  });
+}
+/* Ask the browser to keep our storage (helps resist eviction). Best effort. */
+function requestPersist(){ try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){} }
+/* Move any old inline photos into IndexedDB to free up localStorage. */
+function migratePhotos(){
+  if(!HAS_IDB || !state.me || !state.me.evidence) return;
+  const tasks=state.me.evidence.filter(e=>e.img && !e.key).map(e=>{
+    const k=photoKey(e.ts||Date.now());
+    return photoPut(k, e.img).then(()=>{ e.key=k; delete e.img; }).catch(()=>{});
+  });
+  if(tasks.length) Promise.all(tasks).then(()=>save());
 }
 
 /* =========================================================================
@@ -845,6 +905,7 @@ function requestComplete(id){
   };
 }
 
+
 /* Downscale + compress an image file to a small JPEG data URL. */
 function shrinkImage(file, cb){
   const reader=new FileReader();
@@ -865,7 +926,7 @@ function shrinkImage(file, cb){
   reader.readAsDataURL(file);
 }
 
-function completeChallenge(id, photo){
+async function completeChallenge(id, photo){
   const m=state.me;
   const c=CHALLENGES.find(x=>x.id===id);
   if(!c || isDone(c) || isMaxed(c)) return;
@@ -882,8 +943,15 @@ function completeChallenge(id, photo){
   m.catCount[c.cat]=(m.catCount[c.cat]||0)+1;
   if(photo){
     if(!m.evidence) m.evidence=[];
-    m.evidence.unshift({cid:c.id, en:c.en, icon:c.icon, ts:Date.now(), img:photo});
-    if(m.evidence.length>EVIDENCE_CAP) m.evidence.length=EVIDENCE_CAP;
+    const ts=Date.now();
+    const entry={cid:c.id, en:c.en, icon:c.icon, ts, st:c.stars, pk:periodKey(c)};
+    if(HAS_IDB){
+      const k=photoKey(ts);
+      try{ await photoPut(k, photo); entry.key=k; }   // photo in IndexedDB, not localStorage
+      catch(e){ entry.img=photo; }                    // fall back to inline if IDB fails
+    } else { entry.img=photo; }
+    m.evidence.unshift(entry);
+    while(m.evidence.length>EVIDENCE_CAP){ const old=m.evidence.pop(); if(old && old.key) photoDel(old.key); }
   }
   const before=m.badges.length;
   BADGES.forEach(b=>{ if(!m.badges.includes(b.id) && b.test(m)) m.badges.push(b.id); });
@@ -1006,12 +1074,13 @@ function parentDashboard(){
 
     <hr class="hr">
     <div style="font-weight:800;margin-bottom:4px">Move to another device</div>
-    <div class="muted" style="font-size:12px;margin-bottom:8px">Save a full backup (points, completed quests, photos) here, then open the app on the new phone and restore it.</div>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">Sends a full backup (points, completed quests, photos). On a phone you can AirDrop / Bluetooth / Nearby Share it straight to the other device, then open the app there and restore.</div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn outline" id="exportBtn">Save full backup file</button>
+      <button class="btn outline" id="exportBtn">Send / save full backup</button>
       <input type="file" accept="application/json,.json" id="importFile" class="hide">
-      <button class="btn outline" id="importBtn">Restore from backup file</button>
+      <button class="btn outline" id="importBtn">Restore from backup</button>
     </div>
+    <div class="muted" style="font-size:11px;margin-top:8px" id="storageInfo">Checking storage…</div>
 
     <hr class="hr">
     <div style="font-weight:800;margin-bottom:8px" class="danger">Reset</div>
@@ -1050,17 +1119,55 @@ function parentDashboard(){
   const impFile=document.getElementById("importFile");
   document.getElementById("importBtn").onclick=()=>impFile.click();
   impFile.onchange=()=>{ if(impFile.files[0]) importProgressFile(impFile.files[0]); };
+  showStorageInfo();
 }
 
-/* Full backup: download the entire saved state (progress + photos) as a file. */
-function exportProgress(){
+/* Show how much device storage is used and whether it's protected from eviction. */
+function showStorageInfo(){
+  const el=document.getElementById("storageInfo"); if(!el) return;
+  const photos=(state.me&&state.me.evidence?state.me.evidence.length:0);
+  const parts=[photos+" photo"+(photos===1?"":"s")+" stored"];
+  const done=()=>{ el.textContent=parts.join(" · "); };
   try{
-    const data=JSON.stringify(state);
-    const blob=new Blob([data],{type:"application/json"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
+    const tasks=[];
+    if(navigator.storage&&navigator.storage.estimate){
+      tasks.push(navigator.storage.estimate().then(({usage})=>{ if(usage!=null) parts.push("~"+(usage/1048576).toFixed(1)+" MB used"); }));
+    }
+    if(navigator.storage&&navigator.storage.persisted){
+      tasks.push(navigator.storage.persisted().then(p=>parts.push(p?"protected ✓":"not protected — back up regularly")));
+    }
+    if(tasks.length) Promise.all(tasks).then(done).catch(done); else done();
+  }catch(e){ done(); }
+}
+
+/* Full backup: a self-contained file with progress AND photos (photos are read
+   back out of IndexedDB and inlined so the file works on any device). */
+async function exportProgress(){
+  try{
+    showToast("Preparing backup…");
+    const copy=JSON.parse(JSON.stringify(state));
+    if(copy.me && Array.isArray(copy.me.evidence)){
+      for(const e of copy.me.evidence){
+        if(!e.img && e.key){ try{ e.img=await photoGet(e.key); }catch(_){} }
+        delete e.key; // backup carries inline images
+      }
+    }
+    const json=JSON.stringify(copy);
     const who=(state.me&&state.me.name?state.me.name:"backup").replace(/[^a-z0-9]/gi,"-");
-    a.href=url; a.download="road-to-london-"+who+".json";
+    const fname="road-to-london-"+who+".json";
+    // Prefer the OS share sheet so the file can go straight to the other phone
+    // via AirDrop (iOS), Nearby Share / Quick Share (Android), Bluetooth, etc.
+    try{
+      const file=new File([json],fname,{type:"application/json"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:"Road to London backup"});
+        showToast("Backup shared"); return;
+      }
+    }catch(e){ if(e && e.name==="AbortError") return; }
+    // Fallback: download the file
+    const url=URL.createObjectURL(new Blob([json],{type:"application/json"}));
+    const a=document.createElement("a");
+    a.href=url; a.download=fname;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1500);
     showToast("Backup saved");
@@ -1069,7 +1176,7 @@ function exportProgress(){
 /* Restore a full backup on another device. Replaces everything on this phone. */
 function importProgressFile(file){
   const r=new FileReader();
-  r.onload=()=>{
+  r.onload=async()=>{
     try{
       const s=JSON.parse(r.result);
       if(!s || !s.me || typeof s.me.stars!=="number") throw new Error("bad");
@@ -1077,6 +1184,12 @@ function importProgressFile(file){
       const shape={ stars:0, totalDone:0, catCount:{}, done:{}, streak:0, bestStreak:0, lastActive:null, badges:[], evidence:[] };
       state.me=Object.assign(shape, s.me);
       if(!state.me.id) state.me.id=newId();
+      // move inlined photos from the backup into IndexedDB on this device
+      if(HAS_IDB && Array.isArray(state.me.evidence)){
+        for(const e of state.me.evidence){
+          if(e.img){ const k=photoKey(e.ts||Date.now()); try{ await photoPut(k, e.img); e.key=k; delete e.img; }catch(_){} }
+        }
+      }
       save(); closeModal(); showToast("Progress restored"); render();
     }catch(e){ alert("That file could not be read as a Road to London backup."); }
   };
@@ -1097,12 +1210,13 @@ function openGallery(){
     <div class="muted" style="font-size:12px;margin-bottom:10px">${ev.length} photo(s) · newest first · tap to enlarge.</div>
     ${ev.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         ${ev.map((e,i)=>`<div data-ev="${i}" style="cursor:pointer">
-            <img src="${e.img}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line)">
+            <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg2)">
             <div style="font-size:11px;font-weight:700;margin-top:4px;line-height:1.25">${e.icon} ${esc(e.en)}</div>
             <div class="muted" style="font-size:10px">${evDate(e.ts,true)}</div>
           </div>`).join("")}
       </div>` : `<div class="muted">No photos yet. They appear here when ${esc(state.me.name)} completes a quest.</div>`}
     <button class="btn ghost" id="galBack" style="margin-top:16px">Back</button>`);
+  hydrateImgs(document.getElementById("modalBody"));
   document.getElementById("galBack").onclick=parentDashboard;
   document.querySelectorAll("[data-ev]").forEach(d=>d.onclick=()=>openEvidence(parseInt(d.dataset.ev,10)));
 }
@@ -1112,13 +1226,42 @@ function openEvidence(i){
   openModal(`
     <h3 style="margin:0 0 4px">${e.icon} ${esc(e.en)}</h3>
     <div class="muted" style="font-size:12px;margin-bottom:8px">Completed ${evDate(e.ts,true)}</div>
-    <img src="${e.img}" style="width:100%;border-radius:12px;border:1px solid var(--line)">
-    <div class="row" style="gap:8px;margin-top:12px">
-      <button class="btn ghost" id="evBack" style="flex:1">Back</button>
-      <button class="btn" id="evDel" style="flex:1;background:var(--red)">Delete photo</button>
+    <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;border-radius:12px;border:1px solid var(--line);background:var(--bg2)">
+    <div class="muted" style="font-size:12px;margin-top:10px">If the evidence is too weak, undo the activity — it removes this photo, takes back the ${e.st!=null?e.st:""} stars and lets ${esc(state.me.name)} do it again.</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+      <button class="btn" id="evUndo" style="background:var(--red)">Undo activity (weak evidence)</button>
+      <button class="btn outline" id="evDel">Remove photo only</button>
+      <button class="btn ghost" id="evBack">Back</button>
     </div>`);
+  hydrateImgs(document.getElementById("modalBody"));
   document.getElementById("evBack").onclick=openGallery;
-  document.getElementById("evDel").onclick=()=>{ state.me.evidence.splice(i,1); save(); openGallery(); };
+  document.getElementById("evDel").onclick=()=>{ const old=state.me.evidence.splice(i,1)[0]; if(old && old.key) photoDel(old.key); save(); openGallery(); };
+  document.getElementById("evUndo").onclick=()=>undoEvidence(i);
+}
+
+/* Parent rejects a completion: refund points, free the slot, drop the photo,
+   and re-evaluate badges. The challenge becomes available to do again. */
+function undoEvidence(i){
+  const m=state.me, e=m.evidence[i];
+  if(!e) { openGallery(); return; }
+  const c=CHALLENGES.find(x=>x.id===e.cid);
+  // reconstruct the completion key if older entries didn't store it
+  let pk=e.pk;
+  if(!pk && c){
+    const d=new Date(e.ts);
+    const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    if(c.type==="daily") pk=c.id+"|"+ds; else if(c.type==="once") pk=c.id+"|once";
+  }
+  if(pk && m.done[pk]) delete m.done[pk];
+  const refund = e.st!=null ? e.st : (c?c.stars:0);
+  m.stars=Math.max(0, m.stars-refund);
+  m.totalDone=Math.max(0, m.totalDone-1);
+  if(c) m.catCount[c.cat]=Math.max(0,(m.catCount[c.cat]||0)-1);
+  if(e.key) photoDel(e.key);
+  m.evidence.splice(i,1);
+  // drop any badges that are no longer earned
+  m.badges=m.badges.filter(id=>{ const b=BADGES.find(x=>x.id===id); return b?b.test(m):false; });
+  save(); showToast("Activity undone — "+refund+" stars removed"); openGallery();
 }
 
 function confirmResetMe(){
@@ -1158,6 +1301,7 @@ function confirmFullReset(){
   document.getElementById("fullOk").onclick=()=>{
     if(document.getElementById("fullPw").value!==state.password){ document.getElementById("fullErr").textContent="Wrong password."; return; }
     try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    if(HAS_IDB) photoClear().catch(()=>{});
     state=defaultState(); unlocked=false; previewAll=false; activeTab="home"; activeCat="all"; setupAvatar=null;
     closeModal(); showToast("Game reset"); render();
   };
@@ -1195,6 +1339,8 @@ function wire(){
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{ if(!state.me) return; activeTab=b.dataset.tab; activeCat="all"; render(); });
 document.getElementById("overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") closeModal(); });
 
+requestPersist();   // ask the browser to keep our data (resists eviction)
+migratePhotos();    // move any old inline photos out of localStorage into IndexedDB
 render();
 </script>
 </body>

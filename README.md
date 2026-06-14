@@ -37,8 +37,22 @@ Because they're on separate phones, points are combined with a simple **sync cod
 
 ### 💾 Moving to another device
 To move a kid's whole account (points, completed quests **and** photos) to a new phone, use
-**Parents' Zone → Save full backup file**, then on the new phone open the app and **Restore from
-backup file**. This is different from the points code above, which only combines siblings' totals.
+**Parents' Zone → Send / save full backup**. On a phone this opens the share sheet, so you can
+**AirDrop (iOS) / Quick Share · Nearby Share (Android) / Bluetooth / Messages** the backup straight
+to the other device; then open the app there and tap **Restore from backup**. (On desktop it
+downloads a `.json` file instead.) This is different from the points code above, which only
+combines siblings' totals.
+
+## 💽 Storage & data safety
+
+- **Proof photos are stored in IndexedDB**, not localStorage — localStorage is small (~5 MB per
+  origin) and slow for images, while IndexedDB holds far more and is written per-photo. Photos are
+  also shrunk to ~640 px JPEG, and only the newest 60 are kept.
+- The app calls `navigator.storage.persist()` to ask the browser to **protect the data from
+  eviction**. Parents' Zone shows current usage and whether storage is protected.
+- **iOS note:** Safari can clear a website's data after about **7 days of not opening it**. Two
+  defences: **Add to Home Screen** (installed web apps are exempt), and **make a backup now and
+  then** with the button above. The app has no server, so backups are the only off-device copy.
 
 ## 📸 Proof photos
 
@@ -69,7 +83,8 @@ and saved on their phone. Parents can browse every proof photo in the **Parents'
 
 Tap **Parents** in the bottom bar and enter the password to:
 
-- View the **proof photo gallery**.
+- View the **proof photo gallery**, and **undo an activity** if the evidence is too weak — it removes
+  the photo, takes back the points, re-checks badges, and lets the kid do the quest again.
 - **Unlock all stops (preview)** to verify the "Läs mer" links, and **Update app** to refetch the latest version.
 - Change the **app unlock password** (default `london`).
 - Change the **trip dates** and toggle **sound**.

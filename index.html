@@ -143,6 +143,15 @@
   .stop .need{font-size:11px;color:var(--muted)}
   .stop:not(.done) .t{color:var(--muted)}
   .readmore{display:inline-block;margin-top:5px;font-size:12px;font-weight:700;color:var(--blue);text-decoration:none}
+  /* unlock password boxes */
+  .pwwrap{position:relative;margin:16px auto 0;width:fit-content;max-width:100%}
+  .pwboxes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .pwbox{width:44px;height:58px;border-radius:12px;border:2px solid var(--line);background:#fff;
+    display:grid;place-items:center;font-size:28px;font-weight:800;text-transform:uppercase;color:var(--blue)}
+  .pwbox.filled{border-color:var(--blue);background:var(--blue-soft)}
+  .pwinput{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;font-size:16px;letter-spacing:2.4em}
+  .pwwrap.bad .pwbox{border-color:var(--red);background:var(--red-soft);animation:shake .42s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 
   /* chips */
   .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
@@ -616,6 +625,8 @@ function renderSetup(){
 function renderLock(){
   document.getElementById("nav").classList.add("hide");
   const app=document.getElementById("app");
+  const pw=(state.appPassword||"").toString();
+  const n=Math.max(1, pw.length);
   app.innerHTML=`
    <div class="screen">
     <div class="brand">
@@ -623,26 +634,36 @@ function renderLock(){
       <h1>Nord Challenges</h1>
       <div class="stripe"></div>
     </div>
-    <div class="card">
-      <div class="center" style="font-weight:800;margin-bottom:4px">Hi ${esc(state.me.name)} ${state.me.avatar}</div>
-      <div class="muted center" style="font-size:13px">Complete the intro challenge to get the password — you only enter it once!</div>
-      <label>Unlock password</label>
-      <input id="unlockInput" type="password" placeholder="Password" autocomplete="off">
-      ${sv("Skriv lösenordet för att låsa upp appen. Du behöver bara göra det en gång.")}
+    <div class="card center">
+      <div style="font-weight:800;margin-bottom:4px">Hi ${esc(state.me.name)} ${state.me.avatar}</div>
+      <div class="muted" style="font-size:13px">Complete the intro challenge to get the password — you only enter it once!</div>
+      <div class="pwwrap" id="pwwrap">
+        <div class="pwboxes" id="pwboxes">${'<div class="pwbox"></div>'.repeat(n)}</div>
+        <input id="unlockInput" class="pwinput" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="${n}" aria-label="Password">
+      </div>
+      ${sv("Tryck här och skriv lösenordet. Stora och små bokstäver spelar ingen roll.")}
       <div id="unlockErr" class="danger" style="font-size:13px;margin-top:8px"></div>
       <button class="btn" id="unlockBtn" style="margin-top:14px">Unlock</button>
     </div>
     <div class="center" style="margin-top:14px"><button class="btn ghost small" id="updateBtn">↻ Update app</button></div>
    </div>`;
   const input=document.getElementById("unlockInput");
-  input.focus();
+  const wrap=document.getElementById("pwwrap");
+  const boxes=()=>document.querySelectorAll("#pwboxes .pwbox");
+  const refreshBoxes=()=>{ const v=input.value; boxes().forEach((b,i)=>{ b.textContent=v[i]||""; b.classList.toggle("filled", i<v.length); }); };
   const submit=()=>{
-    if(input.value===state.appPassword){ state.appUnlocked=true; save(); activeTab="home"; render(); }
-    else { document.getElementById("unlockErr").textContent="Wrong password."; input.value=""; input.focus(); }
+    if(input.value.toLowerCase()===pw.toLowerCase()){ state.appUnlocked=true; save(); activeTab="home"; render(); }
+    else {
+      document.getElementById("unlockErr").textContent="Wrong password.";
+      wrap.classList.add("bad"); setTimeout(()=>wrap.classList.remove("bad"),450);
+      input.value=""; refreshBoxes(); input.focus();
+    }
   };
-  document.getElementById("unlockBtn").onclick=submit;
+  input.oninput=()=>{ document.getElementById("unlockErr").textContent=""; refreshBoxes(); if(input.value.length>=n) submit(); };
   input.onkeydown=e=>{ if(e.key==="Enter") submit(); };
+  document.getElementById("unlockBtn").onclick=submit;
   document.getElementById("updateBtn").onclick=updateApp;
+  input.focus();
 }
 
 /* Refetch the latest version of the page (cache-busting). */

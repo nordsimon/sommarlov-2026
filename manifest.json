@@ -1,0 +1,14 @@
+{
+  "name": "Nord Challenges",
+  "short_name": "Nord Challenges",
+  "description": "Summer challenge game — do quests, collect stars, on the way to London.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6fc",
+  "theme_color": "#3a64d8",
+  "icons": [
+    { "src": "icon-512.png", "sizes": "1254x1254", "type": "image/png", "purpose": "any" }
+  ]
+}

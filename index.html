@@ -867,47 +867,31 @@ function viewSync(){
   const qr = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data="+encodeURIComponent(link);
   return `<div class="screen">
     ${topbar()}
-    <div class="card center" style="margin-bottom:12px">
-      <b>Sync your points</b>
-      <div class="muted" style="font-size:13px;margin-top:4px">You each play on your own phone. Share so your points add up for the trip.</div>
-      ${sv("Ni spelar på varsin telefon. Dela så räknas era poäng ihop till resan.")}
-    </div>
 
     <div class="card">
-      <b>1) Show your QR to ${sibling}</b>
-      <div class="muted" style="font-size:12px;margin-top:3px">They scan it with their phone camera — it opens the app and syncs automatically.</div>
-      ${sv(state.partner? "" : "Låt ditt syskon skanna QR-koden med sin kameraapp.")}
-      <div class="center" style="margin-top:12px">
-        <img src="${qr}" alt="Sync QR code" style="width:200px;height:200px;border-radius:12px;background:#fff;border:1px solid var(--line)" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-        <div class="muted" style="display:none;font-size:12px">QR needs internet — use Copy/Share below instead.</div>
-      </div>
-      <div class="muted" style="font-size:12px;margin-top:12px">…or send the code as text:</div>
-      <div class="codebox" id="myCode">${myCode}</div>
-      <div class="row" style="margin-top:10px;gap:8px">
-        <button class="btn outline" id="copyCode" style="flex:1">📋 Copy</button>
-        <button class="btn" id="shareCode" style="flex:1">📤 Share</button>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:12px">
-      <b>2) Got ${sibling}'s code?</b>
-      <div class="muted" style="font-size:12px;margin-top:3px">Scan their QR right here in the app, or paste the code.</div>
-      <button class="btn" id="scanBtn" style="margin-top:10px">📷 Scan QR code</button>
-      <div class="muted center" style="font-size:12px;margin:10px 0 4px">— or —</div>
-      <input id="codeInput" placeholder="LDN-…" autocomplete="off" spellcheck="false">
-      <div id="syncErr" class="danger" style="font-size:13px;margin-top:6px"></div>
-      <button class="btn green" id="applyCode" style="margin-top:10px">Sync points</button>
-    </div>
-
-    <div class="card" style="margin-top:12px">
-      <b>Family status</b>
+      <b>Family</b>
       ${p ? `<div class="team" style="margin-top:10px">
           <div class="mate"><div class="av">${state.me.avatar}</div><div class="nm">${esc(state.me.name)} (you)</div><div class="st">${ico('⭐')}${state.me.stars}</div></div>
           <div class="mate"><div class="av">${p.av}</div><div class="nm">${esc(p.nm)}</div><div class="st">${ico('⭐')}${p.st} · lvl ${p.lv}</div></div>
         </div>
-        <div class="center" style="margin-top:10px"><span class="pill">${ico('⭐')}${combinedStars()} together</span></div>
-        <div class="muted center" style="font-size:12px;margin-top:8px">${esc(p.nm)}'s code synced ${agoText(p.t)}</div>`
-       : `<div class="muted" style="font-size:13px;margin-top:8px">Not synced yet. Scan or paste your sibling's code to combine your points.</div>`}
+        <div class="center" style="margin-top:12px"><span class="pill">${ico('⭐')}${combinedStars()} together</span></div>
+        <div class="muted center" style="font-size:12px;margin-top:8px">${esc(p.nm)} synced ${agoText(p.t)}</div>`
+       : `<div class="muted" style="font-size:13px;margin-top:6px">Not synced yet — scan each other's QR codes below to add your stars together.</div>`}
+    </div>
+
+    <div class="card">
+      <b>Scan ${sibling}'s QR</b>
+      <div class="muted" style="font-size:12px;margin-top:3px">Open the camera and point it at their code.</div>
+      <button class="btn" id="scanBtn" style="margin-top:12px">📷 Scan QR code</button>
+    </div>
+
+    <div class="card">
+      <b>Your QR code</b>
+      <div class="muted" style="font-size:12px;margin-top:3px">Let ${sibling} scan this in their app.</div>
+      <div class="center" style="margin-top:12px">
+        <img src="${qr}" alt="Sync QR code" style="width:210px;height:210px;border-radius:12px;background:#fff;border:1px solid var(--line)" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div class="muted" style="display:none;font-size:12px">QR needs internet to show.</div>
+      </div>
     </div>
   </div>`;
 }
@@ -1524,21 +1508,6 @@ function wire(){
 
   // sync tab
   const sb=document.getElementById("scanBtn"); if(sb) sb.onclick=startScan;
-  const cc=document.getElementById("copyCode");
-  if(cc) cc.onclick=async()=>{ const code=document.getElementById("myCode").textContent; try{ await navigator.clipboard.writeText(code); showToast("Code copied 📋"); }catch(e){ showToast("Select & copy the code"); } };
-  const sc=document.getElementById("shareCode");
-  if(sc) sc.onclick=async()=>{ const code=document.getElementById("myCode").textContent;
-    if(navigator.share){ try{ await navigator.share({title:"Nord Challenges sync code", text:code}); }catch(e){} }
-    else { try{ await navigator.clipboard.writeText(code); showToast("Code copied 📋"); }catch(e){ showToast("Copy the code"); } } };
-  const ac=document.getElementById("applyCode");
-  if(ac) ac.onclick=()=>{
-    const obj=readCode(document.getElementById("codeInput").value);
-    const errEl=document.getElementById("syncErr");
-    if(!obj){ errEl.textContent="That code didn't work. Check you copied all of it."; return; }
-    if(obj.id===state.me.id){ errEl.textContent="That's your own code — paste your sibling's instead."; return; }
-    state.partner={id:obj.id,nm:obj.nm,av:obj.av,st:obj.st,lv:obj.lv,td:obj.td,bs:obj.bs,bc:obj.bc,t:obj.t};
-    save(); burstConfetti(); showToast("Synced with "+obj.nm+" 🔗"); render();
-  };
 }
 
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{

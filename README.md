@@ -36,10 +36,11 @@ farmed quickly: reaching the 9000⭐ top takes steady effort across the summer a
 
 ### 🔗 Syncing their points
 
-**Easiest: QR code.** On the **Sync** tab each phone shows a **QR code**. The sibling scans it with their
-normal phone camera — it opens the app and combines the points automatically. (The QR encodes a
-`?sync=…` link; QR image generation uses an online service, so it needs internet. Copy/Share the text
-code still works offline.)
+**Easiest: QR code.** On the **Sync** tab each phone shows a **QR code**, and there's a **📷 Scan QR code**
+button to scan the sibling's QR **inside the app** (this is the reliable way when the app is on the Home
+Screen, since a phone-camera scan would open the browser, not the installed app). Points combine
+automatically. (QR image generation + the scanner library load from an online service, so they need
+internet; Copy/Share/paste the text code still works offline.)
 
 Because they're on separate phones, points are combined with a simple **sync code**:
 

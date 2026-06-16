@@ -185,6 +185,9 @@
   /* sync */
   .codebox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:var(--bg2);border:1px dashed var(--line);
     border-radius:12px;padding:12px;word-break:break-all;margin-top:8px;color:var(--ink)}
+  .scanbox{position:relative;width:100%;aspect-ratio:1;background:#000;border-radius:14px;overflow:hidden}
+  .scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+  .scanframe{position:absolute;inset:16%;border:3px solid rgba(255,255,255,.9);border-radius:14px;pointer-events:none}
 
   /* nav */
   .nav{position:fixed;bottom:0;left:0;right:0;z-index:40;background:rgba(255,255,255,.9);
@@ -888,7 +891,9 @@ function viewSync(){
 
     <div class="card" style="margin-top:12px">
       <b>2) Got ${sibling}'s code?</b>
-      <div class="muted" style="font-size:12px;margin-top:3px">Scan their QR with your camera, or paste their code here.</div>
+      <div class="muted" style="font-size:12px;margin-top:3px">Scan their QR right here in the app, or paste the code.</div>
+      <button class="btn" id="scanBtn" style="margin-top:10px">📷 Scan QR code</button>
+      <div class="muted center" style="font-size:12px;margin:10px 0 4px">— or —</div>
       <input id="codeInput" placeholder="LDN-…" autocomplete="off" spellcheck="false">
       <div id="syncErr" class="danger" style="font-size:13px;margin-top:6px"></div>
       <button class="btn green" id="applyCode" style="margin-top:10px">Sync points</button>
@@ -940,10 +945,79 @@ function applyPendingSync(){
   if(!pendingSync || !state.me || !state.appUnlocked) return;
   const code=pendingSync; pendingSync=null;
   try{ history.replaceState(null,"",location.origin+location.pathname); }catch(e){}
+  applySyncCode(code);
+}
+/* Set the partner from a sync code string. Returns true on success. */
+function applySyncCode(code){
   const obj=readCode(code);
-  if(!obj || obj.id===state.me.id) return;
+  if(!obj || obj.id===state.me.id) return false;
   state.partner={id:obj.id,nm:obj.nm,av:obj.av,st:obj.st,lv:obj.lv,td:obj.td,bs:obj.bs,bc:obj.bc,t:obj.t};
-  save(); burstConfetti(); showToast("Synced with "+obj.nm);
+  save(); burstConfetti(); showToast("Synced with "+obj.nm); return true;
+}
+/* Pull a sync code out of a scanned string (could be a URL with ?sync=, or raw). */
+function codeFromScan(s){
+  s=(s||"").trim();
+  const m=s.match(/[?&]sync=([^&\s]+)/);
+  if(m){ try{ return decodeURIComponent(m[1]); }catch(e){ return m[1]; } }
+  const m2=s.match(/LDN-[A-Za-z0-9\-_]+/);
+  return m2 ? m2[0] : s;
+}
+
+/* ---------- In-app QR scanner (works inside the home-screen app) ---------- */
+let scan={stream:null,raf:null,detector:null,active:false};
+function loadJsQR(){
+  return new Promise((res,rej)=>{
+    if(window.jsQR) return res();
+    const s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+    s.onload=()=>res(); s.onerror=()=>rej(new Error("load"));
+    document.head.appendChild(s);
+  });
+}
+async function startScan(){
+  openModal(`
+    <h3 style="margin:0 0 8px">Scan ${state.partner?esc(state.partner.nm):"your sibling"}'s QR</h3>
+    <div class="scanbox"><video id="scanVideo" playsinline muted></video><div class="scanframe"></div></div>
+    <div id="scanMsg" class="muted center" style="font-size:13px;margin-top:10px">Point the camera at their QR code…</div>
+    <button class="btn ghost" id="scanCancel" style="margin-top:12px">Cancel</button>`);
+  document.getElementById("scanCancel").onclick=()=>{ stopScan(); closeModal(); };
+  const video=document.getElementById("scanVideo");
+  const msg=document.getElementById("scanMsg");
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ msg.innerHTML='<span class="danger">Camera not available — paste the code instead.</span>'; return; }
+  try{
+    scan.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+    video.srcObject=scan.stream; video.setAttribute("playsinline","true"); await video.play();
+  }catch(e){ msg.innerHTML='<span class="danger">Couldn\'t open the camera. Paste the code instead.</span>'; return; }
+  if("BarcodeDetector" in window){ try{ scan.detector=new window.BarcodeDetector({formats:["qr_code"]}); }catch(e){ scan.detector=null; } }
+  if(!scan.detector){ try{ await loadJsQR(); }catch(e){ msg.innerHTML='<span class="danger">Scanner needs internet. Paste the code instead.</span>'; return; } }
+  scan.active=true;
+  const canvas=document.createElement("canvas"), ctx=canvas.getContext("2d");
+  const tick=async()=>{
+    if(!scan.active) return;
+    if(video.readyState===video.HAVE_ENOUGH_DATA && video.videoWidth){
+      let raw=null;
+      if(scan.detector){ try{ const codes=await scan.detector.detect(video); if(codes&&codes.length) raw=codes[0].rawValue; }catch(e){} }
+      else if(window.jsQR){
+        canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+        ctx.drawImage(video,0,0,canvas.width,canvas.height);
+        const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+        const r=window.jsQR(img.data,img.width,img.height,{inversionAttempts:"dontInvert"}); if(r) raw=r.data;
+      }
+      if(raw){
+        const obj=readCode(codeFromScan(raw));
+        if(obj && obj.id!==state.me.id){ stopScan(); closeModal(); applySyncCode(codeFromScan(raw)); render(); return; }
+        if(obj && obj.id===state.me.id) msg.textContent="That's your own QR — scan your sibling's.";
+      }
+    }
+    scan.raf=requestAnimationFrame(tick);
+  };
+  scan.raf=requestAnimationFrame(tick);
+}
+function stopScan(){
+  scan.active=false;
+  if(scan.raf) cancelAnimationFrame(scan.raf);
+  if(scan.stream){ try{ scan.stream.getTracks().forEach(t=>t.stop()); }catch(e){} }
+  scan.stream=null; scan.raf=null; scan.detector=null;
 }
 
 /* =========================================================================
@@ -1089,7 +1163,7 @@ function beep(){
    The Parents' Zone uses normal in-page screens instead (no scrolling pop-ups).
    ========================================================================= */
 function openModal(html){ document.getElementById("modalBody").innerHTML=html; document.getElementById("overlay").classList.add("show"); }
-function closeModal(){ document.getElementById("overlay").classList.remove("show"); }
+function closeModal(){ stopScan(); document.getElementById("overlay").classList.remove("show"); }
 
 
 /* =========================================================================
@@ -1449,6 +1523,7 @@ function wire(){
   if(activeTab==="parent") wireParent();
 
   // sync tab
+  const sb=document.getElementById("scanBtn"); if(sb) sb.onclick=startScan;
   const cc=document.getElementById("copyCode");
   if(cc) cc.onclick=async()=>{ const code=document.getElementById("myCode").textContent; try{ await navigator.clipboard.writeText(code); showToast("Code copied 📋"); }catch(e){ showToast("Select & copy the code"); } };
   const sc=document.getElementById("shareCode");

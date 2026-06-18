@@ -720,7 +720,7 @@ function viewHome(){
   const factsUnlocked=previewAll ? FACTS.length : Math.min(jIdx, FACTS.length);
   const p=state.partner;
   const ev=(m.evidence||[]);
-  const evShow=ev.slice(0,6);
+  const evShow=ev.slice(0,2);
 
   return `<div class="screen">
     ${topbar()}
@@ -744,9 +744,9 @@ function viewHome(){
     <div class="card">
       ${evShow.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           ${evShow.map((e,i)=>`<div data-myev="${i}" style="cursor:pointer">
-              <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg2)">
-              <div style="font-size:11px;font-weight:700;margin-top:4px;line-height:1.25">${ico(e.icon)}${esc(e.en)}</div>
-              <div class="muted" style="font-size:10px">${evDate(e.ts,true)}</div>
+              <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg2)">
+              <div style="font-size:10px;font-weight:700;margin-top:3px;line-height:1.2">${ico(e.icon)}${esc(e.en)}</div>
+              <div class="muted" style="font-size:9px">${evDate(e.ts,true)}</div>
             </div>`).join("")}
         </div>
         ${ev.length>evShow.length?`<div class="muted center" style="font-size:12px;margin-top:10px">+ ${ev.length-evShow.length} more</div>`:""}`

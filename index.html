@@ -719,6 +719,8 @@ function viewHome(){
   const doneToday=Object.keys(m.done).filter(k=>k.endsWith("|"+today)).length;
   const factsUnlocked=previewAll ? FACTS.length : Math.min(jIdx, FACTS.length);
   const p=state.partner;
+  const ev=(m.evidence||[]);
+  const evShow=ev.slice(0,6);
 
   return `<div class="screen">
     ${topbar()}
@@ -736,6 +738,19 @@ function viewHome(){
       <div class="stat"><div class="v">${ico('🔥')}${m.streak}</div><div class="l">Day streak</div></div>
       <div class="stat"><div class="v">${doneToday}</div><div class="l">Done today</div></div>
       <div class="stat"><div class="v">${m.totalDone}</div><div class="l">Total quests</div></div>
+    </div>
+
+    <h2 class="sec">Your activities</h2>
+    <div class="card">
+      ${evShow.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${evShow.map((e,i)=>`<div data-myev="${i}" style="cursor:pointer">
+              <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg2)">
+              <div style="font-size:11px;font-weight:700;margin-top:4px;line-height:1.25">${ico(e.icon)}${esc(e.en)}</div>
+              <div class="muted" style="font-size:10px">${evDate(e.ts,true)}</div>
+            </div>`).join("")}
+        </div>
+        ${ev.length>evShow.length?`<div class="muted center" style="font-size:12px;margin-top:10px">+ ${ev.length-evShow.length} more</div>`:""}`
+      : `<div class="muted" style="font-size:13px">Nothing yet — complete a quest and snap a photo, and it shows up here!${sv("Inget än — klara en utmaning och ta en bild, så dyker den upp här!")}</div>`}
     </div>
 
     <h2 class="sec">Where we're going</h2>
@@ -1170,6 +1185,18 @@ function beep(){
 function openModal(html){ document.getElementById("modalBody").innerHTML=html; document.getElementById("overlay").classList.add("show"); }
 function closeModal(){ stopScan(); document.getElementById("overlay").classList.remove("show"); }
 
+/* Read-only photo viewer for the kid's own "Your activities" on Home. */
+function openMyEvidence(i){
+  const e=state.me.evidence[i]; if(!e) return;
+  openModal(`
+    <h3 style="margin:0 0 4px">${ico(e.icon)}${esc(e.en)}</h3>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">Completed ${evDate(e.ts,true)}</div>
+    <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;border-radius:12px;border:1px solid var(--line);background:var(--bg2)">
+    <button class="btn" id="myEvClose" style="margin-top:12px">Close</button>`);
+  hydrateImgs();
+  document.getElementById("myEvClose").onclick=closeModal;
+}
+
 
 /* =========================================================================
    PARENTS' ZONE — in-page screens. parentScreen routes the sub-views.
@@ -1525,6 +1552,8 @@ function wire(){
   });
   wireQuestButtons();
   wireBadges();
+  document.querySelectorAll("[data-myev]").forEach(d=>d.onclick=()=>openMyEvidence(parseInt(d.dataset.myev,10)));
+  hydrateImgs();
   if(activeTab==="parent") wireParent();
 
   // sync tab

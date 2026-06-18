@@ -424,7 +424,8 @@ function freshMe(name, avatar, id){
     stars:0, totalDone:0, catCount:{}, done:{},
     streak:0, bestStreak:0, lastActive:null, badges:[], evidence:[] };
 }
-const EVIDENCE_CAP = 60; // keep this many newest proof photos (storage friendly)
+/* Photos are retained with no cap; save() only drops the oldest if the device
+   storage is genuinely full (QuotaExceededError) so the app keeps working. */
 function defaultState(){
   return { version:2, password:DEFAULT_PASSWORD, appPassword:APP_PASSWORD, appUnlocked:false,
     tripStart:TRIP_START, tripEnd:TRIP_END, soundOn:true, me:null, partner:null };
@@ -1131,7 +1132,7 @@ async function completeChallenge(id, photo){
       catch(e){ entry.img=photo; }                    // fall back to inline if IDB fails
     } else { entry.img=photo; }
     m.evidence.unshift(entry);
-    while(m.evidence.length>EVIDENCE_CAP){ const old=m.evidence.pop(); if(old && old.key) photoDel(old.key); }
+    // No cap — keep every photo. (save() only drops oldest if storage is truly full.)
   }
   const before=m.badges.length;
   BADGES.forEach(b=>{ if(!m.badges.includes(b.id) && b.test(m)) m.badges.push(b.id); });

@@ -252,6 +252,7 @@ const TRIP_END   = "2026-10-28";
 const AVATARS = ["🦁","🦊","🐯","🐲","🦄","🐼","🐸","🐵","🦖","🐱","🐶","🦉","🐧","🦅","🦈","🐙","🚀","⚡","🔥","🌟","🦸","🥷","🧙","👑"];
 
 const CATS = {
+  midsommar:{ name:"Midsommar",          icon:"🌼" },
   reading:  { name:"Reading & Learning", icon:"📚" },
   active:   { name:"Active & Outdoors",  icon:"🏃" },
   dog:      { name:"Elton the Dog",      icon:"🐶" },
@@ -275,6 +276,16 @@ const CATS = {
    levels can't be farmed quickly — reaching 9000 needs steady effort, mixing in
    weekly and big quests, and lands near the trip rather than mid-summer. */
 const CHALLENGES = [
+  /* MIDSOMMAR 🌼 — visible always, but only completable on Midsummer (from/to). */
+  {id:"ms1", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:30, icon:"🐸", en:"Dance 'Små grodorna' around a midsummer pole", sv:"Dansa Små grodorna runt en midsommarstång."},
+  {id:"ms2", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:30, icon:"🌸", en:"Make a flower crown", sv:"Gör en blomsterkrans av blommor."},
+  {id:"ms3", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:25, icon:"🌼", en:"Pick 7 different wild flowers (put them under your pillow!)", sv:"Plocka 7 olika vilda blommor och lägg under kudden."},
+  {id:"ms4", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:20, icon:"😋", en:"Taste something new on the Midsummer table", sv:"Smaka på något nytt på midsommarbordet (t.ex. sill)."},
+  {id:"ms5", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:25, icon:"🎯", en:"Play a classic garden game (kubb, sack race, tug-of-war)", sv:"Spela ett klassiskt midsommarspel (kubb, säckhoppning, dragkamp)."},
+  {id:"ms6", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:20, icon:"🎶", en:"Sing a Swedish summer song with the family", sv:"Sjung en svensk sommarsång med familjen (t.ex. Idas sommarvisa)."},
+  {id:"ms7", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:25, icon:"📖", en:"Learn one Midsummer tradition and explain it in English", sv:"Lär dig en midsommartradition och förklara den på engelska."},
+  {id:"ms8", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:30, icon:"☀️", en:"Spend Midsummer Eve outdoors", sv:"Var ute hela midsommarafton."},
+
   {id:"r1", cat:"reading", type:"daily",  stars:15, icon:"📖", en:"Read in English for 15 minutes", sv:"Läs på engelska i 15 minuter. Bok, serietidning eller app går bra."},
   {id:"r2", cat:"reading", type:"daily",  stars:15, icon:"📕", en:"Read a book in Swedish for 20 minutes", sv:"Läs en bok på svenska i 20 minuter."},
   {id:"r3", cat:"reading", type:"daily",  stars:10, icon:"✍️", en:"Learn 5 new English words and write them down", sv:"Lär dig 5 nya engelska ord och skriv ner dem med översättning."},
@@ -551,6 +562,9 @@ function maxCount(ch){ return ch.max!==undefined ? ch.max : (ch.type==="daily" ?
 /* Total times completed so far (counts each distinct day/week stamp). */
 function timesDone(ch){ const pre=ch.id+"|"; return Object.keys(state.me.done).filter(k=>k.indexOf(pre)===0).length; }
 function isMaxed(ch){ const m=maxCount(ch); return m!=null && timesDone(ch)>=m; }
+/* Quests with a from/to date window are locked outside it (e.g. Midsommar). */
+function isDateLocked(ch){ const t=todayStr(); if(ch.from && t<ch.from) return true; if(ch.to && t>ch.to) return true; return false; }
+function fmtDay(iso){ if(!iso) return ""; const d=new Date(iso+"T00:00:00"); return d.getDate()+" "+MONTHS[d.getMonth()]; }
 function levelOf(stars){ return Math.floor(stars/STARS_PER_LEVEL)+1; }
 function rankOf(stars){ return RANKS[Math.min(levelOf(stars)-1, RANKS.length-1)]; }
 function combinedStars(){ return state.me.stars + (state.partner ? state.partner.st : 0); }
@@ -813,14 +827,21 @@ function viewChallenges(){
 function challengeCard(c){
   const doneToday=isDone(c);
   const max=maxCount(c), times=max!=null?timesDone(c):0, maxed=isMaxed(c);
+  const dateLocked = !doneToday && isDateLocked(c);
   const typeLabel=c.type==="daily"?"Daily":c.type==="weekly"?"Weekly":"Big quest";
-  const dim = maxed || doneToday;
+  const dim = maxed || doneToday || dateLocked;
   let badge="";
   if(maxed) badge=`<div class="done-badge">🏁 ${times}/${max}</div>`;
   else if(doneToday) badge=`<div class="done-badge">✓ Today</div>`;
+  else if(dateLocked) badge=`<div class="done-badge" style="background:var(--bg2);color:var(--muted)">🔒 ${fmtDay(c.from)}</div>`;
   const progressTag = max!=null ? `<span class="tag">${times}/${max} done</span>` : "";
   let footer;
-  if(maxed) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">All done — you completed this ${max} times!</div>`;
+  if(dateLocked){
+    const t=todayStr();
+    const msg = (c.to && t>c.to) ? "Midsummer is over — see you next year!" : `Unlocks on Midsummer — ${fmtDay(c.from)}`;
+    footer=`<div class="muted center" style="font-size:12px;margin-top:11px">🔒 ${msg}</div>`;
+  }
+  else if(maxed) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">All done — you completed this ${max} times!</div>`;
   else if(doneToday) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">Done today — come back tomorrow${max!=null?` (${times}/${max})`:""}</div>`;
   else footer=`<div class="actions">
         <button class="btn small ghost" data-help="${c.id}">Need help?</button>
@@ -1010,7 +1031,7 @@ function stopScan(){
 /* Ask for a proof photo before completing. The photo is required. */
 function requestComplete(id){
   const c=CHALLENGES.find(x=>x.id===id);
-  if(!c || isDone(c) || isMaxed(c)) return;
+  if(!c || isDone(c) || isMaxed(c) || isDateLocked(c)) return;
   let photo=null;
   const needP=!!c.needsParent;
   openModal(`
@@ -1073,7 +1094,7 @@ function shrinkImage(file, cb){
 async function completeChallenge(id, photo){
   const m=state.me;
   const c=CHALLENGES.find(x=>x.id===id);
-  if(!c || isDone(c) || isMaxed(c)) return;
+  if(!c || isDone(c) || isMaxed(c) || isDateLocked(c)) return;
   const today=todayStr();
   if(m.lastActive!==today){
     const y=new Date(); y.setDate(y.getDate()-1);

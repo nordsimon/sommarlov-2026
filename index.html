@@ -1185,6 +1185,26 @@ function beep(){
 function openModal(html){ document.getElementById("modalBody").innerHTML=html; document.getElementById("overlay").classList.add("show"); }
 function closeModal(){ stopScan(); document.getElementById("overlay").classList.remove("show"); }
 
+/* Save/share a proof photo as a JPEG (share sheet on phones, download on desktop). */
+async function saveEvidence(i){
+  const e=state.me.evidence[i]; if(!e) return;
+  let data=null; try{ data=await evImg(e); }catch(_){}
+  if(!data){ alert("Photo not found."); return; }
+  try{
+    const blob=await (await fetch(data)).blob();
+    const fname="nord-"+((e.en||"photo").replace(/[^a-z0-9]+/gi,"-").slice(0,40).replace(/^-|-$/g,"")||"photo")+".jpg";
+    const file=new File([blob],fname,{type:blob.type||"image/jpeg"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file]}); return; }catch(err){ if(err && err.name==="AbortError") return; }
+    }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    showToast("Photo saved");
+  }catch(err){ alert("Could not save the photo."); }
+}
+
 /* Read-only photo viewer for the kid's own "Your activities" on Home. */
 function openMyEvidence(i){
   const e=state.me.evidence[i]; if(!e) return;
@@ -1192,8 +1212,12 @@ function openMyEvidence(i){
     <h3 style="margin:0 0 4px">${ico(e.icon)}${esc(e.en)}</h3>
     <div class="muted" style="font-size:12px;margin-bottom:8px">Completed ${evDate(e.ts,true)}</div>
     <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;border-radius:12px;border:1px solid var(--line);background:var(--bg2)">
-    <button class="btn" id="myEvClose" style="margin-top:12px">Close</button>`);
+    <div class="row" style="gap:8px;margin-top:12px">
+      <button class="btn outline" id="myEvSave" style="flex:1">⬇ Save photo</button>
+      <button class="btn" id="myEvClose" style="flex:1">Close</button>
+    </div>`);
   hydrateImgs();
+  document.getElementById("myEvSave").onclick=()=>saveEvidence(i);
   document.getElementById("myEvClose").onclick=closeModal;
 }
 
@@ -1310,6 +1334,7 @@ function evidenceHTML(i){
       <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;border-radius:12px;border:1px solid var(--line);background:var(--bg2)">
       <div class="muted" style="font-size:12px;margin-top:10px">If the evidence is too weak, undo the activity — it removes this photo, takes back ${e.st!=null?e.st:""} stars and lets ${esc(state.me.name)} do it again.</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+        <button class="btn outline" id="evSave">⬇ Save photo</button>
         <button class="btn" id="evUndo" style="background:var(--red)">Undo activity (weak evidence)</button>
         <button class="btn outline" id="evDel">Remove photo only</button>
       </div>
@@ -1366,6 +1391,7 @@ function wireParent(){
   }
   if(parentScreen==="evidence"){
     document.getElementById("evBack").onclick=()=>parentGo("gallery");
+    document.getElementById("evSave").onclick=()=>saveEvidence(parentEvi);
     document.getElementById("evDel").onclick=()=>{ const old=state.me.evidence.splice(parentEvi,1)[0]; if(old && old.key) photoDel(old.key); save(); parentGo("gallery"); };
     document.getElementById("evUndo").onclick=()=>undoEvidence(parentEvi);
     hydrateImgs(); return;

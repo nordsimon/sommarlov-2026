@@ -436,6 +436,7 @@ let activeTab = "home";
 let activeCat = "all";
 let setupAvatar = null;
 let previewAll = false;  // Parents' preview: reveal all journey stops (per session)
+let myGalleryOpen = false;  // kid's full photo gallery (opened from Home)
 let parentUnlocked = false;       // Parents' Zone password gate (per session)
 let parentScreen = "dash";        // dash | gallery | evidence | confirmReset | confirmFull
 let parentEvi = 0;                // index of evidence photo being viewed
@@ -692,7 +693,7 @@ function render(){
   applyPendingSync();
   document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active", b.dataset.tab===activeTab));
   const app=document.getElementById("app");
-  if(activeTab==="home") app.innerHTML=viewHome();
+  if(activeTab==="home") app.innerHTML = myGalleryOpen ? viewMyGallery() : viewHome();
   else if(activeTab==="challenges") app.innerHTML=viewChallenges();
   else if(activeTab==="badges") app.innerHTML=viewBadges();
   else if(activeTab==="sync") app.innerHTML=viewSync();
@@ -750,7 +751,7 @@ function viewHome(){
               <div class="muted" style="font-size:9px">${evDate(e.ts,true)}</div>
             </div>`).join("")}
         </div>
-        ${ev.length>evShow.length?`<div class="muted center" style="font-size:12px;margin-top:10px">+ ${ev.length-evShow.length} more</div>`:""}`
+        ${ev.length>evShow.length?`<button class="btn outline small" id="openMyGallery" style="width:100%;margin-top:10px">See all ${ev.length} photos</button>`:""}`
       : `<div class="muted" style="font-size:13px">Nothing yet — complete a quest and snap a photo, and it shows up here!${sv("Inget än — klara en utmaning och ta en bild, så dyker den upp här!")}</div>`}
     </div>
 
@@ -819,6 +820,24 @@ function viewHome(){
 
     <div style="margin-top:18px"><button class="btn" id="goQuests">Do today's quests</button></div>
   </div>`;
+}
+
+/* Kid's full read-only photo gallery (opened from Home → "See all photos"). */
+function viewMyGallery(){
+  const ev=state.me.evidence||[];
+  return `<div class="screen">${topbar()}
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>Your photos</b><button class="btn ghost small" id="myGalBack">Back</button></div>
+      <div class="muted" style="font-size:12px;margin-top:4px">${ev.length} photo(s) · newest first · tap to view.</div>
+    </div>
+    ${ev.length ? `<div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${ev.map((e,i)=>`<div data-myev="${i}" style="cursor:pointer">
+            <img ${e.img?`src="${e.img}"`:`data-k="${esc(e.key||"")}"`} style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg2)">
+            <div style="font-size:11px;font-weight:700;margin-top:4px;line-height:1.25">${ico(e.icon)}${esc(e.en)}</div>
+            <div class="muted" style="font-size:10px">${evDate(e.ts,true)}</div>
+          </div>`).join("")}
+      </div></div>` : `<div class="card muted">No photos yet.</div>`}
+   </div>`;
 }
 
 function questListHTML(){
@@ -1580,6 +1599,8 @@ function wire(){
   wireQuestButtons();
   wireBadges();
   document.querySelectorAll("[data-myev]").forEach(d=>d.onclick=()=>openMyEvidence(parseInt(d.dataset.myev,10)));
+  const omg=document.getElementById("openMyGallery"); if(omg) omg.onclick=()=>{ myGalleryOpen=true; scrollTop(); render(); };
+  const mgb=document.getElementById("myGalBack"); if(mgb) mgb.onclick=()=>{ myGalleryOpen=false; scrollTop(); render(); };
   hydrateImgs();
   if(activeTab==="parent") wireParent();
 
@@ -1589,7 +1610,7 @@ function wire(){
 
 document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{
   if(!state.me || !state.appUnlocked) return;
-  activeTab=b.dataset.tab; activeCat="all";
+  activeTab=b.dataset.tab; activeCat="all"; myGalleryOpen=false;
   if(activeTab==="parent"){ parentUnlocked=false; parentScreen="dash"; }  // require password each visit
   scrollTop(); render();
 });

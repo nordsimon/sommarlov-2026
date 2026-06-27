@@ -252,7 +252,7 @@ const TRIP_END   = "2026-10-28";
 const AVATARS = ["🦁","🦊","🐯","🐲","🦄","🐼","🐸","🐵","🦖","🐱","🐶","🦉","🐧","🦅","🦈","🐙","🚀","⚡","🔥","🌟","🦸","🥷","🧙","👑"];
 
 const CATS = {
-  midsommar:{ name:"Midsommar",          icon:"🌼" },
+  house:    { name:"Summerhouse",        icon:"🏡" },
   reading:  { name:"Reading & Learning", icon:"📚" },
   active:   { name:"Active & Outdoors",  icon:"🏃" },
   dog:      { name:"Elton the Dog",      icon:"🐶" },
@@ -276,15 +276,20 @@ const CATS = {
    levels can't be farmed quickly — reaching 9000 needs steady effort, mixing in
    weekly and big quests, and lands near the trip rather than mid-summer. */
 const CHALLENGES = [
-  /* MIDSOMMAR 🌼 — visible always, but only completable on Midsummer (from/to). */
-  {id:"ms1", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:30, icon:"🐸", en:"Dance 'Små grodorna' around a midsummer pole", sv:"Dansa Små grodorna runt en midsommarstång."},
-  {id:"ms2", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:30, icon:"🌸", en:"Make a flower crown", sv:"Gör en blomsterkrans av blommor."},
-  {id:"ms3", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:25, icon:"🌼", en:"Pick 7 different wild flowers (put them under your pillow!)", sv:"Plocka 7 olika vilda blommor och lägg under kudden."},
-  {id:"ms4", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:20, icon:"😋", en:"Taste something new on the Midsummer table", sv:"Smaka på något nytt på midsommarbordet (t.ex. sill)."},
-  {id:"ms5", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:25, icon:"🎯", en:"Play a classic garden game (kubb, sack race, tug-of-war)", sv:"Spela ett klassiskt midsommarspel (kubb, säckhoppning, dragkamp)."},
-  {id:"ms6", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:20, icon:"🎶", en:"Sing a Swedish summer song with the family", sv:"Sjung en svensk sommarsång med familjen (t.ex. Idas sommarvisa)."},
-  {id:"ms7", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:25, icon:"📖", en:"Learn one Midsummer tradition and explain it in English", sv:"Lär dig en midsommartradition och förklara den på engelska."},
-  {id:"ms8", cat:"midsommar", type:"once", from:"2026-06-19", to:"2026-06-19", stars:30, icon:"☀️", en:"Spend Midsummer Eve outdoors", sv:"Var ute hela midsommarafton."},
+  /* SUMMERHOUSE 🏡 — shared with cousins & family (17 people): fun together + helping out. */
+  {id:"sh1",  cat:"house", type:"weekly", stars:30, icon:"🏃", en:"Play a big group game with your cousins (tag, kubb, hide & seek)", sv:"Lek en stor grupplek med kusinerna (kull, kubb, kurragömma)."},
+  {id:"sh2",  cat:"house", type:"once",   stars:35, icon:"🏅", en:"Organise a mini-Olympics or competition for everyone", sv:"Ordna ett mini-OS eller en tävling för alla."},
+  {id:"sh3",  cat:"house", type:"weekly", stars:25, icon:"🏕️", en:"Build a den or fort with your cousins", sv:"Bygg en koja eller fästning med kusinerna."},
+  {id:"sh4",  cat:"house", type:"once",   stars:35, icon:"🎭", en:"Put on a show or talent night for the family", sv:"Sätt upp en show eller talangkväll för familjen."},
+  {id:"sh5",  cat:"house", type:"weekly", stars:25, icon:"🎲", en:"Have a board-game or movie night with your cousins", sv:"Ha en spelkväll eller filmkväll med kusinerna."},
+  {id:"sh6",  cat:"house", type:"once",   stars:30, icon:"🗺️", en:"Make a treasure hunt for the younger cousins", sv:"Gör en skattjakt för de yngre kusinerna."},
+  {id:"sh7",  cat:"house", type:"once",   stars:25, icon:"📸", en:"Take a group photo of the whole family (all 17!)", sv:"Ta ett gruppfoto på hela familjen (alla 17!)."},
+  {id:"sh8",  cat:"house", type:"daily",  stars:15, icon:"🍽️", en:"Help set the big table for everyone", sv:"Hjälp till att duka det stora bordet för alla."},
+  {id:"sh9",  cat:"house", type:"daily",  stars:15, icon:"🧽", en:"Help clear and wash up after a big meal", sv:"Hjälp till att plocka undan och diska efter en stor måltid."},
+  {id:"sh10", cat:"house", type:"weekly", stars:25, icon:"🍳", en:"Help cook or bake something for the whole family", sv:"Hjälp till att laga eller baka något till hela familjen."},
+  {id:"sh11", cat:"house", type:"daily",  stars:10, icon:"🧹", en:"Tidy a shared room or common area", sv:"Städa ett gemensamt rum eller utrymme."},
+  {id:"sh12", cat:"house", type:"daily",  stars:15, icon:"🤝", en:"Help a younger cousin with something", sv:"Hjälp en yngre kusin med något."},
+  {id:"sh13", cat:"house", type:"weekly", stars:20, icon:"🛒", en:"Help carry groceries or take out the rubbish & recycling", sv:"Hjälp till att bära matkassar eller slänga sopor och återvinning."},
 
   {id:"r1", cat:"reading", type:"daily",  stars:15, icon:"📖", en:"Read in English for 15 minutes", sv:"Läs på engelska i 15 minuter. Bok, serietidning eller app går bra."},
   {id:"r2", cat:"reading", type:"daily",  stars:15, icon:"📕", en:"Read a book in Swedish for 20 minutes", sv:"Läs en bok på svenska i 20 minuter."},
@@ -564,7 +569,7 @@ function maxCount(ch){ return ch.max!==undefined ? ch.max : (ch.type==="daily" ?
 /* Total times completed so far (counts each distinct day/week stamp). */
 function timesDone(ch){ const pre=ch.id+"|"; return Object.keys(state.me.done).filter(k=>k.indexOf(pre)===0).length; }
 function isMaxed(ch){ const m=maxCount(ch); return m!=null && timesDone(ch)>=m; }
-/* Quests with a from/to date window are locked outside it (e.g. Midsommar). */
+/* Quests with a from/to date window are locked outside it (e.g. a seasonal event). */
 function isDateLocked(ch){ const t=todayStr(); if(ch.from && t<ch.from) return true; if(ch.to && t>ch.to) return true; return false; }
 function fmtDay(iso){ if(!iso) return ""; const d=new Date(iso+"T00:00:00"); return d.getDate()+" "+MONTHS[d.getMonth()]; }
 function levelOf(stars){ return Math.floor(stars/STARS_PER_LEVEL)+1; }
@@ -873,7 +878,7 @@ function challengeCard(c){
   let footer;
   if(dateLocked){
     const t=todayStr();
-    const msg = (c.to && t>c.to) ? "Midsummer is over — see you next year!" : `Unlocks on Midsummer — ${fmtDay(c.from)}`;
+    const msg = (c.to && t>c.to) ? "This one's over!" : `Unlocks on ${fmtDay(c.from)}`;
     footer=`<div class="muted center" style="font-size:12px;margin-top:11px">🔒 ${msg}</div>`;
   }
   else if(maxed) footer=`<div class="muted center" style="font-size:12px;margin-top:11px">All done — you completed this ${max} times!</div>`;
